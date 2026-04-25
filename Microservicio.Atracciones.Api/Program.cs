@@ -27,21 +27,20 @@ builder.Services.AddApiVersioningConfig();
 
 var app = builder.Build();
 
-// 1. Middleware de excepciones PRIMERO — captura todo lo que falle abajo
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
-// 2. Swagger solo en desarrollo
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Atracciones v2.0");
+    c.RoutePrefix = string.Empty;
+});
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "API Atracciones v2.0");
-        c.RoutePrefix = string.Empty;
-    });
+    app.UseHttpsRedirection();
 }
 
-app.UseHttpsRedirection();
 app.UseCors(builder.Configuration
     .GetSection("CorsSettings:PolicyName").Value ?? "AtraccionesPolicy");
 app.UseResponseCaching();
