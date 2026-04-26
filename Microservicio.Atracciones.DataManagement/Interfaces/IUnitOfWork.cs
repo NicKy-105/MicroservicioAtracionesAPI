@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.DataAccess.Repositories.Interfaces;
+using Microservicio.Atracciones.DataAccess.Repositories.Interfaces;
 
 namespace Microservicio.Atracciones.DataManagement.Interfaces;
 
@@ -24,4 +24,5 @@ public interface IUnitOfWork : IAsyncDisposable
     IReseniaRepository Resenias { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync();
 }

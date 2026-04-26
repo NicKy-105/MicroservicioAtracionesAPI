@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.DataAccess.Context;
+using Microservicio.Atracciones.DataAccess.Context;
 using Microservicio.Atracciones.DataAccess.Repositories;
 using Microservicio.Atracciones.DataAccess.Repositories.Interfaces;
 using Microservicio.Atracciones.DataManagement.Interfaces;
@@ -43,6 +43,9 @@ public class UnitOfWork : IUnitOfWork
     /// </summary>
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _context.SaveChangesAsync(cancellationToken);
+
+    public async Task<Microsoft.EntityFrameworkCore.Storage.IDbContextTransaction> BeginTransactionAsync()
+        => await _context.Database.BeginTransactionAsync();
 
     public async ValueTask DisposeAsync()
         => await _context.DisposeAsync();

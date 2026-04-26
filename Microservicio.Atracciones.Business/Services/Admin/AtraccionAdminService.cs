@@ -76,9 +76,9 @@ namespace Microservicio.Atracciones.Business.Services.Admin
 
         public async Task EliminarAsync(Guid atGuid, string usuarioAccion, string ip)
         {
-            _ = await _atraccionService.ObtenerPorGuidAsync(atGuid)
+            var model = await _atraccionService.ObtenerPorGuidAsync(atGuid)
                 ?? throw new NotFoundException("Atraccion", atGuid);
-            await _atraccionService.EliminarLogicoAsync(0, usuarioAccion, ip);  // AtId resuelto internamente
+            await _atraccionService.EliminarLogicoAsync(model.AtId, usuarioAccion, ip);
         }
 
         public async Task<AtraccionAdminResponse> ObtenerPorGuidAsync(Guid atGuid)

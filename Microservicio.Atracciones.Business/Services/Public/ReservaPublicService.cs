@@ -16,17 +16,20 @@ namespace Microservicio.Atracciones.Business.Services.Public
         private readonly ITicketDataService _ticketService;
         private readonly IAtraccionDataService _atraccionService;  // #7: para obtener nombre real
         private readonly ReservaRules _rules;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ReservaPublicService(
             IReservaDataService reservaService,
             ITicketDataService ticketService,
             IAtraccionDataService atraccionService,
-            ReservaRules rules)
+            ReservaRules rules,
+            IUnitOfWork unitOfWork)
         {
             _reservaService = reservaService;
             _ticketService = ticketService;
             _atraccionService = atraccionService;
             _rules = rules;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<ReservaResponse> CrearAsync(
@@ -34,72 +37,83 @@ namespace Microservicio.Atracciones.Business.Services.Public
         {
             ReservaPublicValidator.Validar(request);
 
-            // 1. Validar y obtener tickets con precios actuales
-            var lineas = request.Lineas.Select(l => (l.TckGuid, l.Cantidad)).ToList();
-            var ticketsValidos = await _rules.ValidarYObtenerTicketsAsync(
-                request.HorGuid, lineas);
-
-            // 2. Verificar cupos totales
-            var totalPersonas = ticketsValidos.Sum(t => t.Cantidad);
-            await _rules.ValidarDisponibilidadAsync(request.HorGuid, totalPersonas);
-
-            // 3. Obtener horario
-            var horario = await _ticketService.ObtenerHorarioPorGuidAsync(request.HorGuid)
-                ?? throw new NotFoundException("Horario", request.HorGuid);
-
-            // 4. Calcular totales (IVA 15%)
-            var (subtotal, iva, total) = ReservaRules.CalcularTotales(ticketsValidos);
-
-            // 5. Construir modelo de reserva con líneas
-            var reservaModel = new ReservaDataModel
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
             {
-                CliId = cliId,
-                HorId = horario.HorId,
-                RevCodigo = ReservaRules.GenerarCodigo(),
-                RevSubtotal = subtotal,
-                RevValorIva = iva,
-                RevTotal = total,
-                RevOrigenCanal = request.OrigenCanal,
-                RevUsuarioIngreso = usuarioAccion,
-                RevIpIngreso = ip,
-                Detalle = ticketsValidos.Select(t => new ReservaDetalleDataModel
+                // 1. Validar y obtener tickets con precios actuales
+                var lineas = request.Lineas.Select(l => (l.TckGuid, l.Cantidad)).ToList();
+                var ticketsValidos = await _rules.ValidarYObtenerTicketsAsync(
+                    request.HorGuid, lineas);
+
+                // 2. Verificar cupos totales
+                var totalPersonas = ticketsValidos.Sum(t => t.Cantidad);
+                await _rules.ValidarDisponibilidadAsync(request.HorGuid, totalPersonas);
+
+                // 3. Obtener horario
+                var horario = await _ticketService.ObtenerHorarioPorGuidAsync(request.HorGuid)
+                    ?? throw new NotFoundException("Horario", request.HorGuid);
+
+                // 4. Calcular totales (IVA 15%)
+                var (subtotal, iva, total) = ReservaRules.CalcularTotales(ticketsValidos);
+
+                // 5. Construir modelo de reserva con líneas
+                var reservaModel = new ReservaDataModel
                 {
-                    TckId = t.Ticket.TckId,
-                    RdetCantidad = t.Cantidad,
-                    RdetPrecioUnit = t.Ticket.TckPrecio,   // precio congelado
-                    RdetSubtotal = t.Ticket.TckPrecio * t.Cantidad,
-                    TckTipoParticipante = t.Ticket.TckTipoParticipante,
-                    RdetUsuarioIngreso = usuarioAccion,
-                    RdetIpIngreso = ip
-                }).ToList()
-            };
+                    CliId = cliId,
+                    HorId = horario.HorId,
+                    RevCodigo = ReservaRules.GenerarCodigo(),
+                    RevSubtotal = subtotal,
+                    RevValorIva = iva,
+                    RevTotal = total,
+                    RevOrigenCanal = request.OrigenCanal,
+                    RevUsuarioIngreso = usuarioAccion,
+                    RevIpIngreso = ip,
+                    Detalle = ticketsValidos.Select(t => new ReservaDetalleDataModel
+                    {
+                        TckId = t.Ticket.TckId,
+                        RdetCantidad = t.Cantidad,
+                        RdetPrecioUnit = t.Ticket.TckPrecio,   // precio congelado
+                        RdetSubtotal = t.Ticket.TckPrecio * t.Cantidad,
+                        TckTipoParticipante = t.Ticket.TckTipoParticipante,
+                        RdetUsuarioIngreso = usuarioAccion,
+                        RdetIpIngreso = ip
+                    }).ToList()
+                };
 
-            await _reservaService.CrearAsync(reservaModel);
+                await _reservaService.CrearAsync(reservaModel);
 
-            // 6. Descontar cupos en HORARIO
-            var horarioActualizado = new HorarioDataModel
+                // 6. Descontar cupos en HORARIO
+                var horarioActualizado = new HorarioDataModel
+                {
+                    HorId = horario.HorId,
+                    HorGuid = horario.HorGuid,
+                    TckId = horario.TckId,
+                    HorFecha = horario.HorFecha,
+                    HorHoraInicio = horario.HorHoraInicio,
+                    HorHoraFin = horario.HorHoraFin,
+                    HorCuposDisponibles = horario.HorCuposDisponibles - totalPersonas,
+                    HorEstado = horario.HorEstado,
+                    HorUsuarioMod = usuarioAccion,
+                    HorIpMod = ip
+                };
+                await _ticketService.ActualizarHorarioAsync(horarioActualizado);
+
+                // 7. Obtener nombre real de la atracción
+                var ticketModel  = await _ticketService.ObtenerPorIdAsync(horario.TckId);
+                var atraccion    = ticketModel is not null
+                    ? await _atraccionService.ObtenerPorIdAsync(ticketModel.AtId)
+                    : null;
+                var atraccionNombre = atraccion?.AtNombre ?? "Atracción";
+
+                await transaction.CommitAsync();
+                
+                return ReservaPublicMapper.ToResponse(reservaModel, horario, atraccionNombre);
+            }
+            catch
             {
-                HorId = horario.HorId,
-                HorGuid = horario.HorGuid,
-                TckId = horario.TckId,
-                HorFecha = horario.HorFecha,
-                HorHoraInicio = horario.HorHoraInicio,
-                HorHoraFin = horario.HorHoraFin,
-                HorCuposDisponibles = horario.HorCuposDisponibles - totalPersonas,
-                HorEstado = horario.HorEstado,
-                HorUsuarioMod = usuarioAccion,
-                HorIpMod = ip
-            };
-            await _ticketService.ActualizarHorarioAsync(horarioActualizado);
-
-            // 7. Obtener nombre real de la atracción
-            var ticketModel  = await _ticketService.ObtenerPorIdAsync(horario.TckId);
-            var atraccion    = ticketModel is not null
-                ? await _atraccionService.ObtenerPorIdAsync(ticketModel.AtId)
-                : null;
-            var atraccionNombre = atraccion?.AtNombre ?? "Atracción";
-
-            return ReservaPublicMapper.ToResponse(reservaModel, horario, atraccionNombre);
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<ReservaResponse> ObtenerPorGuidAsync(Guid revGuid, int cliId)

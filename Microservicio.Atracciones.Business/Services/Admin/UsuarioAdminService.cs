@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.Business.DTOs.Admin.Usuarios;
+using Microservicio.Atracciones.Business.DTOs.Admin.Usuarios;
 using Microservicio.Atracciones.Business.Exceptions;
 using Microservicio.Atracciones.Business.Interfaces.Admin;
 using Microservicio.Atracciones.Business.Interfaces.Auth;
@@ -42,7 +42,7 @@ namespace Microservicio.Atracciones.Business.Services.Admin
 
         public async Task<UsuarioResponse> ActualizarAsync(Guid usuGuid, ActualizarUsuarioRequest request, string usuarioAccion, string ip)
         {
-            var model = await _usuarioService.ObtenerPorLoginAsync(usuGuid.ToString())
+            var model = await _usuarioService.ObtenerPorGuidAsync(usuGuid)
                 ?? throw new NotFoundException("Usuario", usuGuid);
 
             if (!string.IsNullOrWhiteSpace(request.NuevaPassword))
@@ -59,7 +59,7 @@ namespace Microservicio.Atracciones.Business.Services.Admin
 
         public async Task EliminarAsync(Guid usuGuid, string usuarioAccion, string ip)
         {
-            var model = await _usuarioService.ObtenerPorLoginAsync(usuGuid.ToString())
+            var model = await _usuarioService.ObtenerPorGuidAsync(usuGuid)
                 ?? throw new NotFoundException("Usuario", usuGuid);
 
             await _usuarioService.EliminarLogicoAsync(model.UsuId, usuarioAccion, ip);
@@ -67,8 +67,8 @@ namespace Microservicio.Atracciones.Business.Services.Admin
 
         public async Task<IReadOnlyList<UsuarioResponse>> ListarAsync()
         {
-            // Implementación básica — DataService puede agregar filtros según necesidad
-            return new List<UsuarioResponse>();
+            var modelList = await _usuarioService.ListarAsync();
+            return modelList.Select(UsuarioAdminMapper.ToResponse).ToList();
         }
     }
 

@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.DataManagement.Interfaces;
+using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Mappers.Seguridad;
 using Microservicio.Atracciones.DataManagement.Models.Seguridad;
 using System;
@@ -23,6 +23,18 @@ namespace Microservicio.Atracciones.DataManagement.Services
         {
             var entity = await _uow.Usuarios.ObtenerPorLoginAsync(login);
             return UsuarioDataMapper.ToDataModel(entity);
+        }
+
+        public async Task<UsuarioDataModel?> ObtenerPorGuidAsync(Guid usuGuid)
+        {
+            var entity = await _uow.Usuarios.ObtenerPorGuidAsync(usuGuid);
+            return UsuarioDataMapper.ToDataModel(entity);
+        }
+
+        public async Task<IReadOnlyList<UsuarioDataModel>> ListarAsync()
+        {
+            var entities = await _uow.Usuarios.ListarAsync();
+            return entities.Select(e => UsuarioDataMapper.ToDataModel(e)!).ToList();
         }
 
         public async Task<IReadOnlyList<RolDataModel>> ObtenerRolesPorUsuarioAsync(int usuId)
