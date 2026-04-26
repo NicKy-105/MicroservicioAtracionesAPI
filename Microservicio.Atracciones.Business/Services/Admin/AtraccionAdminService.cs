@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.Business.DTOs.Admin.Atracciones;
+using Microservicio.Atracciones.Business.DTOs.Admin.Atracciones;
 using Microservicio.Atracciones.Business.Exceptions;
 using Microservicio.Atracciones.Business.Interfaces.Admin;
 using Microservicio.Atracciones.Business.Mappers.Admin;
@@ -93,6 +93,8 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             var dmFiltro = new AtraccionFiltroDataModel
             {
                 Ciudad = filtro.Ciudad,
+                TextoBusqueda = filtro.TextoBusqueda,
+                Estado = filtro.Estado,
                 Page = filtro.Page,
                 Limit = filtro.Limit
             };

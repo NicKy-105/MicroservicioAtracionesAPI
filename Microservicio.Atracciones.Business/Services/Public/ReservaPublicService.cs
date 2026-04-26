@@ -6,6 +6,7 @@ using Microservicio.Atracciones.Business.Rules.Public;
 using Microservicio.Atracciones.Business.Validators.Public;
 using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Models.Reservas;
+using Microservicio.Atracciones.DataManagement.Models.Common;
 
 namespace Microservicio.Atracciones.Business.Services.Public
 {
@@ -123,6 +124,22 @@ namespace Microservicio.Atracciones.Business.Services.Public
             var atraccionNombre = atraccion?.AtNombre ?? "Atracción";
 
             return ReservaPublicMapper.ToResponse(reserva, horario, atraccionNombre);
+        }
+
+        public async Task<DataPagedResult<ReservaResponse>> ListarPorClienteAsync(int cliId, int page, int limit)
+        {
+            var paged = await _reservaService.ListarPorClienteAsync(cliId, page, limit);
+            var list = new List<ReservaResponse>();
+
+            foreach(var reserva in paged.Items)
+            {
+                var horario = await _ticketService.ObtenerHorarioPorIdAsync(reserva.HorId) ?? new HorarioDataModel();
+                var ticketModel = horario.TckId > 0 ? await _ticketService.ObtenerPorIdAsync(horario.TckId) : null;
+                var atraccion = ticketModel is not null ? await _atraccionService.ObtenerPorIdAsync(ticketModel.AtId) : null;
+                var atraccionNombre = atraccion?.AtNombre ?? "Atracción";
+                list.Add(ReservaPublicMapper.ToResponse(reserva, horario, atraccionNombre));
+            }
+            return new DataPagedResult<ReservaResponse>(list, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
         }
     }
 }

@@ -28,6 +28,15 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
         private string IpActual => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiListResponse<ReservaResponse>), 200)]
+        public async Task<IActionResult> ListarMisReservas([FromQuery] int page = 1, [FromQuery] int limit = 10)
+        {
+            var resultado = await _service.ListarPorClienteAsync(CliIdActual, page, limit);
+            var response = new ApiListResponse<ReservaResponse>(resultado.Items, resultado.TotalFiltrado, page, limit);
+            return Ok(response);
+        }
+
         // ----------------------------------------------------------------
         //  POST /api/v1/reservas
         //  Crea reserva con cabecera + detalle en una sola transacción.

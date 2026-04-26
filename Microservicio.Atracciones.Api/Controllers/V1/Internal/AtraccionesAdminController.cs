@@ -26,6 +26,16 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
         private string IpActual => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiListResponse<AtraccionAdminResponse>), 200)]
+        public async Task<IActionResult> Listar([FromQuery] AtraccionAdminFiltroRequest filtro)
+        {
+            var resultado = await _service.ListarAsync(filtro);
+            var response = new ApiListResponse<AtraccionAdminResponse>(
+                resultado.Items, resultado.TotalFiltrado, filtro.Page, filtro.Limit);
+            return Ok(response);
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ApiItemResponse<AtraccionAdminResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]

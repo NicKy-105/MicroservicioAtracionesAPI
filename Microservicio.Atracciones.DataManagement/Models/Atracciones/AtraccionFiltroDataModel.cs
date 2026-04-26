@@ -1,9 +1,11 @@
-﻿
+
 namespace Microservicio.Atracciones.DataManagement.Models.Atracciones
 {
     public class AtraccionFiltroDataModel
     {
         public string? Ciudad { get; set; }
+        public string? TextoBusqueda { get; set; }
+        public char? Estado { get; set; }
         public Guid? TipoCatGuid { get; set; }
         public Guid? SubtipoCatGuid { get; set; }
         public string? Etiqueta { get; set; }
