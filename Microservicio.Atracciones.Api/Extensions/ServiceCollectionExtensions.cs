@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.Business.Interfaces.Admin;
+using Microservicio.Atracciones.Business.Interfaces.Admin;
 using Microservicio.Atracciones.Business.Interfaces.Auth;
 using Microservicio.Atracciones.Business.Interfaces.Public;
 using Microservicio.Atracciones.Business.Rules.Admin;
@@ -51,6 +51,9 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<IFacturaDataService, FacturaDataService>();
             services.AddScoped<IReseniaDataService, ReseniaDataService>();
             services.AddScoped<IAuditoriaLogDataService, AuditoriaLogDataService>();
+            services.AddScoped<ICategoriaDataService, CategoriaDataService>();
+            services.AddScoped<IIdiomaDataService, IdiomaDataService>();
+            services.AddScoped<IIncluyeDataService, IncluyeDataService>();
 
             // ── Business — Infraestructura (viven en API) ──────────────
             services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
