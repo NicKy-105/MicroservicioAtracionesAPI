@@ -47,13 +47,13 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         }
 
         [HttpPost("horarios")]
-        [ProducesResponseType(typeof(ApiItemResponse<TicketResponse>), 201)]
+        [ProducesResponseType(typeof(ApiItemResponse<HorarioResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
         public async Task<IActionResult> CrearHorario([FromBody] CrearHorarioRequest request)
         {
-            var ticket = await _service.CrearHorarioAsync(request, UsuarioAccion, IpActual);
-            return StatusCode(201, new ApiItemResponse<TicketResponse>(ticket, 201));
+            var horario = await _service.CrearHorarioAsync(request, UsuarioAccion, IpActual);
+            return StatusCode(201, new ApiItemResponse<HorarioResponse>(horario, 201));
         }
     }
 }

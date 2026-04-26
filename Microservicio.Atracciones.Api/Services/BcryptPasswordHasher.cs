@@ -11,9 +11,9 @@ namespace Microservicio.Atracciones.Api.Services
     public class BcryptPasswordHasher : IPasswordHasher
     {
         public string Hashear(string password)
-            => password;   // v1: sin hashing
+            => BCrypt.Net.BCrypt.HashPassword(password, workFactor: 12);
 
         public bool Verificar(string password, string hash)
-            => password == hash;   // v1: comparación directa
+            => BCrypt.Net.BCrypt.Verify(password, hash);
     }
 }

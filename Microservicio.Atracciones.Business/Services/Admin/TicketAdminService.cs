@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.Business.DTOs.Admin.Tickets;
+using Microservicio.Atracciones.Business.DTOs.Admin.Tickets;
 using Microservicio.Atracciones.Business.Exceptions;
 using Microservicio.Atracciones.Business.Interfaces.Admin;
 using Microservicio.Atracciones.Business.Mappers.Admin;
@@ -73,7 +73,7 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             await _ticketService.EliminarLogicoAsync(model.TckId, usuarioAccion, ip);
         }
 
-        public async Task<TicketResponse> CrearHorarioAsync(CrearHorarioRequest request, string usuarioAccion, string ip)
+        public async Task<HorarioResponse> CrearHorarioAsync(CrearHorarioRequest request, string usuarioAccion, string ip)
         {
             TicketAdminValidator.ValidarCrearHorario(request);
             await _rules.ValidarTicketExisteAsync(request.TckGuid);
@@ -93,7 +93,17 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             };
 
             await _ticketService.CrearHorarioAsync(horario);
-            return TicketAdminMapper.ToResponse(ticket, string.Empty);
+            
+            return new HorarioResponse
+            {
+                HorGuid = horario.HorGuid.ToString(),
+                TckGuid = ticket.TckGuid.ToString(),
+                Fecha = horario.HorFecha.ToString("yyyy-MM-dd"),
+                HoraInicio = horario.HorHoraInicio.ToString(@"hh\:mm"),
+                HoraFin = horario.HorHoraFin?.ToString(@"hh\:mm"),
+                CuposDisponibles = horario.HorCuposDisponibles,
+                Estado = horario.HorEstado
+            };
         }
     }
 }

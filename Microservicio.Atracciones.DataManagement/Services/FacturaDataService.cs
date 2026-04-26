@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.DataAccess.Queries;
+using Microservicio.Atracciones.DataAccess.Queries;
 using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Mappers.Facturacion;
 using Microservicio.Atracciones.DataManagement.Models.Common;
@@ -74,8 +74,6 @@ namespace Microservicio.Atracciones.DataManagement.Services
         }
 
         public async Task<bool> ExisteNumeroFacturaAsync(string numero)
-            => await _uow.Facturas.ObtenerPorReservaAsync(0) is not null
-                || (await _uow.Facturas.ObtenerPorGuidAsync(Guid.Empty)) is not null;
-        // Nota: se implementa con una consulta real en el repo si se necesita
+            => await _queryRepo.ObtenerPorNumeroAsync(numero) is not null;
     }
 }

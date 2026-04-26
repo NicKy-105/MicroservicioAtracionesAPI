@@ -1,4 +1,4 @@
-﻿using Microservicio.Atracciones.DataAccess.Entities.Reservas;
+using Microservicio.Atracciones.DataAccess.Entities.Reservas;
 using Microservicio.Atracciones.DataManagement.Models.Reservas;
 
 namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
@@ -64,7 +64,7 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
             return new ReservaEntity
             {
                 RevGuid = Guid.NewGuid(),
-                RevCodigo = $"RES-{Guid.NewGuid():N}"[..16].ToUpper(),
+                RevCodigo = model.RevCodigo,
                 CliId = model.CliId,
                 HorId = model.HorId,
                 RevFechaReservaUtc = DateTime.UtcNow,

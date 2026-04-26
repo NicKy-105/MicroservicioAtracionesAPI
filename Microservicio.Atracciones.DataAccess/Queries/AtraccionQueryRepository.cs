@@ -98,12 +98,7 @@ public class AtraccionQueryRepository
             }
         }
 
-        // ── DIAGNÓSTICO TEMPORAL ─────────────────────────────────────
-        Console.WriteLine("=== SQL GENERADO POR EF CORE ===");
-        Console.WriteLine($"Ciudad recibida: '{filtro.Ciudad}'");
-        Console.WriteLine(query.ToQueryString());
-        Console.WriteLine("=================================");
-        // ────────────────────────────────────────────────────────────
+        // ── DIAGNÓSTICO TEMPORAL ELIMINADO ─────────────────────────────────────
 
         var totalSinFiltros = await _context.Atracciones
             .AsNoTracking()

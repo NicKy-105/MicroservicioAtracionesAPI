@@ -12,7 +12,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Auth
 {
     [ApiController]
     [ApiVersion("1.0")]
-    [Route("api/v1/admin/auth")]
+    [Route("api/v1/auth")]
     [Produces("application/json")]
     public class AuthController : ControllerBase
     {
