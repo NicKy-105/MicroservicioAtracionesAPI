@@ -155,5 +155,6 @@ namespace Microservicio.Atracciones.Business.Services.Public
             }
             return new DataPagedResult<ReservaResponse>(list, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
         }
+
     }
 }

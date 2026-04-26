@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using Microservicio.Atracciones.DataAccess.Common;
 using Microservicio.Atracciones.DataAccess.Context;
 using Microservicio.Atracciones.DataAccess.Entities.Reservas;
@@ -70,5 +70,13 @@ namespace Microservicio.Atracciones.DataAccess.Queries
                     x.FacFechaEmision >= desde &&
                     x.FacFechaEmision <= hasta)
                 .SumAsync(x => x.FacTotal);
+
+        // ----------------------------------------------------------------
+        //  Factura por número de factura
+        // ----------------------------------------------------------------
+        public async Task<FacturaEntity?> ObtenerPorNumeroAsync(string numero)
+            => await _context.Facturas
+                .AsNoTracking()
+                .FirstOrDefaultAsync(f => f.FacNumero == numero && f.FacEstado == 'A');
     }
 }
