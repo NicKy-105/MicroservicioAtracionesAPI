@@ -43,7 +43,7 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 // 1. Validar y obtener tickets con precios actuales
                 var lineas = request.Lineas.Select(l => (l.TckGuid, l.Cantidad)).ToList();
                 var ticketsValidos = await _rules.ValidarYObtenerTicketsAsync(
-                    request.HorGuid, lineas);
+                    request.HorGuid, request.AtGuid, lineas);
 
                 // 2. Verificar cupos totales
                 var totalPersonas = ticketsValidos.Sum(t => t.Cantidad);

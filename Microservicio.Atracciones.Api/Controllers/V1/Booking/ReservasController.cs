@@ -7,13 +7,14 @@ using System.Security.Claims;
 using Microservicio.Atracciones.Api.Helpers;
 using Microservicio.Atracciones.Api.Mappers.Public;
 using Microservicio.Atracciones.Api.Models.Common;
+using Microservicio.Atracciones.Business.Exceptions;
 
 namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
 {
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v1/reservas")]
-    [Authorize]   // requiere token de cliente
+    [Authorize(Policy = "ClienteAutenticado")]   // requiere token de cliente
     [Produces("application/json")]
     [ProducesResponseType(typeof(ApiErrorResponse), 401)]
     [ProducesResponseType(typeof(ApiErrorResponse), 500)]
@@ -24,7 +25,17 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         public ReservasController(IReservaPublicService service)
             => _service = service;
 
-        private int CliIdActual => int.Parse(User.FindFirstValue("cli_id") ?? "0");
+        private int CliIdActual
+        {
+            get
+            {
+                var claim = User.FindFirstValue("cli_id");
+                if (!int.TryParse(claim, out var cliId) || cliId <= 0)
+                    throw new UnauthorizedBusinessException("El token no tiene un cliente asociado.");
+
+                return cliId;
+            }
+        }
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
         private string IpActual => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 

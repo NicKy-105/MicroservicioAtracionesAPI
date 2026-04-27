@@ -39,9 +39,14 @@ namespace Microservicio.Atracciones.Business.Rules.Public
         /// retorna el precio actual para congelarlo en RESERVA_DETALLE.
         /// </summary>
         public async Task<IList<(TicketDataModel Ticket, int Cantidad)>>
-            ValidarYObtenerTicketsAsync(Guid horGuid, IList<(Guid TckGuid, int Cantidad)> lineas)
+            ValidarYObtenerTicketsAsync(Guid horGuid, Guid atGuid, IList<(Guid TckGuid, int Cantidad)> lineas)
         {
             var resultado = new List<(TicketDataModel, int)>();
+            var horario = await _ticketService.ObtenerHorarioPorGuidAsync(horGuid)
+                ?? throw new NotFoundException("Horario", horGuid);
+
+            var ticketHorario = await _ticketService.ObtenerPorIdAsync(horario.TckId)
+                ?? throw new ConflictException("El ticket asociado al horario no fue encontrado.");
 
             foreach (var (tckGuid, cantidad) in lineas)
             {
@@ -50,6 +55,9 @@ namespace Microservicio.Atracciones.Business.Rules.Public
 
                 if (ticket.TckEstado != 'A')
                     throw new ConflictException($"El ticket '{ticket.TckTitulo}' no está activo.");
+
+                if (ticket.AtId != ticketHorario.AtId)
+                    throw new ConflictException($"El ticket '{ticket.TckTitulo}' no pertenece a la atracción del horario seleccionado.");
 
                 resultado.Add((ticket, cantidad));
             }

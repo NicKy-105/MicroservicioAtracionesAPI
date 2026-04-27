@@ -1,6 +1,9 @@
 using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Mappers.Seguridad;
 using Microservicio.Atracciones.DataManagement.Models.Seguridad;
+using Microservicio.Atracciones.DataAccess.Context;
+using Microservicio.Atracciones.DataAccess.Entities.Seguridad;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -10,8 +13,13 @@ namespace Microservicio.Atracciones.DataManagement.Services
     public class UsuarioDataService : IUsuarioDataService
     {
         private readonly IUnitOfWork _uow;
+        private readonly AtraccionesDbContext _context;
 
-        public UsuarioDataService(IUnitOfWork uow) => _uow = uow;
+        public UsuarioDataService(IUnitOfWork uow, AtraccionesDbContext context)
+        {
+            _uow = uow;
+            _context = context;
+        }
 
         public async Task<UsuarioDataModel?> ObtenerPorIdAsync(int usuId)
         {
@@ -51,6 +59,36 @@ namespace Microservicio.Atracciones.DataManagement.Services
         public async Task CrearAsync(UsuarioDataModel model)
         {
             var entity = UsuarioDataMapper.ToNewEntity(model);
+
+            var rolesSolicitados = model.Roles
+                .Select(r => r.RolDescripcion.Trim().ToUpperInvariant())
+                .Where(r => !string.IsNullOrWhiteSpace(r))
+                .Distinct()
+                .ToList();
+
+            if (rolesSolicitados.Any())
+            {
+                var roles = await _context.Roles
+                    .Where(r => r.RolEstado == 'A' && rolesSolicitados.Contains(r.RolDescripcion.ToUpper()))
+                    .ToListAsync();
+
+                var faltantes = rolesSolicitados
+                    .Except(roles.Select(r => r.RolDescripcion.ToUpperInvariant()))
+                    .ToList();
+
+                if (faltantes.Any())
+                    throw new InvalidOperationException($"Roles no encontrados en la base: {string.Join(", ", faltantes)}.");
+
+                foreach (var rol in roles)
+                {
+                    entity.UsuariosRoles.Add(new UsuarioRolEntity
+                    {
+                        RolId = rol.RolId,
+                        UsuRolEstado = 'A'
+                    });
+                }
+            }
+
             await _uow.Usuarios.AgregarAsync(entity);
             await _uow.SaveChangesAsync();
 

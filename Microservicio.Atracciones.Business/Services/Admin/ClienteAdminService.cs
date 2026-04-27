@@ -44,9 +44,20 @@ namespace Microservicio.Atracciones.Business.Services.Admin
                 UsuPasswordHash = _passwordHasher.Hashear(request.Password),
                 UsuEstado = 'A',
                 UsuUsuarioRegistro = usuarioAccion,
-                UsuIpRegistro = ip
+                UsuIpRegistro = ip,
+                Roles = new List<RolDataModel>
+                {
+                    new() { RolDescripcion = "CLIENTE" }
+                }
             };
-            await _usuarioService.CrearAsync(usuarioModel);
+            try
+            {
+                await _usuarioService.CrearAsync(usuarioModel);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.StartsWith("Roles no encontrados"))
+            {
+                throw new ConflictException(ex.Message);
+            }
 
             // 2. Crear cliente vinculado al usuario
             var clienteModel = new ClienteDataModel

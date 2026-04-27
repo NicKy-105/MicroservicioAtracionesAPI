@@ -7,6 +7,7 @@ using System.Security.Claims;
 using Microservicio.Atracciones.Api.Helpers;
 using Microservicio.Atracciones.Api.Mappers.Public;
 using Microservicio.Atracciones.Api.Models.Common;
+using Microservicio.Atracciones.Business.Exceptions;
 
 namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
 {
@@ -22,7 +23,17 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
         public ReseniasController(IReseniaPublicService service)
             => _service = service;
 
-        private int CliIdActual => int.Parse(User.FindFirstValue("cli_id") ?? "0");
+        private int CliIdActual
+        {
+            get
+            {
+                var claim = User.FindFirstValue("cli_id");
+                if (!int.TryParse(claim, out var cliId) || cliId <= 0)
+                    throw new UnauthorizedBusinessException("El token no tiene un cliente asociado.");
+
+                return cliId;
+            }
+        }
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
         private string IpActual => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 
@@ -45,7 +56,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
         //  Requiere token de cliente — solo reseña reservas propias
         // ----------------------------------------------------------------
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = "ClienteAutenticado")]
         [EndpointName(EndpointNames.CrearResenia)]
         [ProducesResponseType(typeof(ApiItemResponse<ReseniaResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]

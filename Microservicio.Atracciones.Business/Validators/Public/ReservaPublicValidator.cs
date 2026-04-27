@@ -12,6 +12,9 @@ namespace Microservicio.Atracciones.Business.Validators.Public
             if (request.HorGuid == Guid.Empty)
                 errores.Add("El GUID del horario es obligatorio.");
 
+            if (request.AtGuid == Guid.Empty)
+                errores.Add("El GUID de la atracción es obligatorio.");
+
             if (request.Lineas is null || !request.Lineas.Any())
                 errores.Add("Debe incluir al menos una línea de ticket.");
 

@@ -33,10 +33,21 @@ namespace Microservicio.Atracciones.Business.Services.Admin
                 UsuPasswordHash = _passwordHasher.Hashear(request.Password),
                 UsuEstado = 'A',
                 UsuUsuarioRegistro = usuarioAccion,
-                UsuIpRegistro = ip
+                UsuIpRegistro = ip,
+                Roles = request.Roles
+                    .Select(r => new RolDataModel { RolDescripcion = r.Trim().ToUpperInvariant() })
+                    .ToList()
             };
 
-            await _usuarioService.CrearAsync(model);
+            try
+            {
+                await _usuarioService.CrearAsync(model);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.StartsWith("Roles no encontrados"))
+            {
+                throw new ConflictException(ex.Message);
+            }
+
             return UsuarioAdminMapper.ToResponse(model);
         }
 
