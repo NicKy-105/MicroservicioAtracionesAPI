@@ -53,6 +53,20 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 var horario = await _ticketService.ObtenerHorarioPorGuidAsync(request.HorGuid)
                     ?? throw new NotFoundException("Horario", request.HorGuid);
 
+                // 3.1 Obtener nombre real de la atracción y validar AtGuid
+                var ticketModel  = await _ticketService.ObtenerPorIdAsync(horario.TckId);
+                var atraccion    = ticketModel is not null
+                    ? await _atraccionService.ObtenerPorIdAsync(ticketModel.AtId)
+                    : null;
+                    
+                if (atraccion == null)
+                    throw new ConflictException("La atracción del horario no fue encontrada.");
+                    
+                if (atraccion.AtGuid != request.AtGuid)
+                    throw new ConflictException("El GUID de la atracción no coincide con el horario seleccionado.");
+                    
+                var atraccionNombre = atraccion.AtNombre;
+
                 // 4. Calcular totales (IVA 15%)
                 var (subtotal, iva, total) = ReservaRules.CalcularTotales(ticketsValidos);
 
@@ -97,13 +111,6 @@ namespace Microservicio.Atracciones.Business.Services.Public
                     HorIpMod = ip
                 };
                 await _ticketService.ActualizarHorarioAsync(horarioActualizado);
-
-                // 7. Obtener nombre real de la atracción
-                var ticketModel  = await _ticketService.ObtenerPorIdAsync(horario.TckId);
-                var atraccion    = ticketModel is not null
-                    ? await _atraccionService.ObtenerPorIdAsync(ticketModel.AtId)
-                    : null;
-                var atraccionNombre = atraccion?.AtNombre ?? "Atracción";
 
                 await transaction.CommitAsync();
                 
