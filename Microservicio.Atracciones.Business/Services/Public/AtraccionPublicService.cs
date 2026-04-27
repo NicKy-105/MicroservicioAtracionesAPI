@@ -14,15 +14,21 @@ namespace Microservicio.Atracciones.Business.Services.Public
         private readonly IAtraccionDataService _atraccionService;
         private readonly ITicketDataService _ticketService;
         private readonly IDestinoDataService _destinoService;
+        private readonly ICategoriaDataService _categoriaService;
+        private readonly IIdiomaDataService _idiomaService;
 
         public AtraccionPublicService(
             IAtraccionDataService atraccionService,
             ITicketDataService ticketService,
-            IDestinoDataService destinoService)
+            IDestinoDataService destinoService,
+            ICategoriaDataService categoriaService,
+            IIdiomaDataService idiomaService)
         {
             _atraccionService = atraccionService;
             _ticketService = ticketService;
             _destinoService = destinoService;
+            _categoriaService = categoriaService;
+            _idiomaService = idiomaService;
         }
 
         public async Task<DataPagedResult<AtraccionListadoResponse>> ListarAsync(
@@ -76,20 +82,16 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 model, disponibilidad, tickets, horarios, baseUrl, model.DesNombre);
         }
 
-        public async Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync(string? ciudad)
+        public async Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync()
         {
-            AtraccionPublicValidator.ValidarCiudadFiltros(ciudad);
-
             // #5: Una sola carga — categorías, etiquetas e idiomas se derivan de esta lista
             var atracciones = (await _atraccionService.ListarConFiltrosAsync(
-                new AtraccionFiltroDataModel { Ciudad = ciudad, Limit = 200 })).Items;
+                new AtraccionFiltroDataModel { Limit = 1000 })).Items;
 
             var total = atracciones.Count;
-            var destinos = string.IsNullOrWhiteSpace(ciudad)
-                ? await _destinoService.ListarActivosAsync()
-                : (await _destinoService.ObtenerPorNombreAsync(ciudad)) is { } destino
-                    ? new[] { destino }
-                    : Array.Empty<DataManagement.Models.Catalogos.DestinoDataModel>();
+            var destinos = await _destinoService.ListarActivosAsync();
+            var categoriasActivas = await _categoriaService.ListarActivasAsync();
+            var idiomasActivos = await _idiomaService.ListarActivosAsync();
 
             // #8: Count real por cada destino — ya no siempre 0 para los que no son la ciudad buscada
             var destinationFilters = destinos
@@ -106,11 +108,12 @@ namespace Microservicio.Atracciones.Business.Services.Public
 
             // #5: Todos los helpers usan la misma lista cargada (excepto categorías que usa query optimizada)
             // E-03: Obtener estructura jerárquica real desde BD y contar atracciones
-            var categoriasBD = await _atraccionService.ObtenerCategoriasPorCiudadAsync(ciudad);
+            var categoriasBD = categoriasActivas.Where(c => c.CatParentId is null).ToList();
             var categorias = new List<OpcionFiltroResponse>();
             foreach (var cat in categoriasBD)
             {
-                var hijos = cat.Hijos.Select(h => new OpcionFiltroResponse
+                var hijosCatalogo = categoriasActivas.Where(h => h.CatParentId == cat.CatId).ToList();
+                var hijos = hijosCatalogo.Select(h => new OpcionFiltroResponse
                 {
                     Name = h.CatNombre,
                     Tagname = h.CatGuid.ToString(),
@@ -118,7 +121,8 @@ namespace Microservicio.Atracciones.Business.Services.Public
                     Image = null
                 }).ToList();
 
-                var productCount = atracciones.Count(a => a.Categorias.Any(ac => ac.CatId == cat.CatId || cat.Hijos.Any(h => h.CatId == ac.CatId)));
+                var productCount = atracciones.Count(a =>
+                    a.Categorias.Any(ac => ac.CatId == cat.CatId || hijosCatalogo.Any(h => h.CatId == ac.CatId)));
 
                 categorias.Add(new OpcionFiltroResponse
                 {
@@ -137,10 +141,11 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 .Select(g => (Descripcion: g.Key, Conteo: g.Count()))
                 .ToList();
 
-            var idiomasConteo = atracciones
-                .SelectMany(a => a.Idiomas)
-                .GroupBy(i => i.IdDescripcion)
-                .Select(g => (Descripcion: g.Key, Conteo: g.Count()))
+            var idiomasConteo = idiomasActivos
+                .Select(i => (
+                    Descripcion: i.IdDescripcion,
+                    Guid: i.IdGuid,
+                    Conteo: atracciones.Count(a => a.Idiomas.Any(ai => ai.IdId == i.IdId))))
                 .ToList();
 
             // #2: MinRatingFilter — counts reales basados en calificación promedio de la ciudad
@@ -176,14 +181,14 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 TimeOfDayFilters = timeOfDayFilters,
                 SupportedLanguageFilters = idiomasConteo.Select(i => new OpcionFiltroResponse
                 {
-                    Name = i.Descripcion, Tagname = i.Descripcion, ProductCount = i.Conteo
+                    Name = i.Descripcion, Tagname = i.Guid.ToString(), ProductCount = i.Conteo
                 }).ToList(),
                 UfiFilters = new List<OpcionFiltroResponse>
                 {
                     new()
                     {
-                        Name = string.IsNullOrWhiteSpace(ciudad) ? "Todos" : ciudad,
-                        Tagname = string.IsNullOrWhiteSpace(ciudad) ? "todos" : ciudad.ToLower(),
+                        Name = "Todos",
+                        Tagname = "todos",
                         ProductCount = total
                     }
                 }

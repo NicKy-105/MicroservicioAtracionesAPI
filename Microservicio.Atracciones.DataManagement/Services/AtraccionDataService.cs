@@ -6,6 +6,8 @@ using Microservicio.Atracciones.DataManagement.Mappers.Atracciones;
 using Microservicio.Atracciones.DataManagement.Models.Catalogos;
 using Microservicio.Atracciones.DataManagement.Models.Atracciones;
 using Microservicio.Atracciones.DataManagement.Models.Common;
+using Microservicio.Atracciones.DataAccess.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace Microservicio.Atracciones.DataManagement.Services
 {
@@ -14,15 +16,18 @@ namespace Microservicio.Atracciones.DataManagement.Services
         private readonly IUnitOfWork _uow;
         private readonly AtraccionQueryRepository _queryRepo;
         private readonly TicketQueryRepository _ticketQuery;
+        private readonly AtraccionesDbContext _context;
 
         public AtraccionDataService(
             IUnitOfWork uow,
             AtraccionQueryRepository queryRepo,
-            TicketQueryRepository ticketQuery)
+            TicketQueryRepository ticketQuery,
+            AtraccionesDbContext context)
         {
             _uow = uow;
             _queryRepo = queryRepo;
             _ticketQuery = ticketQuery;
+            _context = context;
         }
 
         public async Task<AtraccionDataModel?> ObtenerPorIdAsync(int atId)
@@ -94,6 +99,105 @@ namespace Microservicio.Atracciones.DataManagement.Services
 
             model.AtId = entity.AtId;
             model.AtGuid = entity.AtGuid;
+        }
+
+        public async Task CrearConRelacionesAsync(
+            AtraccionDataModel model,
+            IEnumerable<Guid> categoriaGuids,
+            IEnumerable<Guid> idiomaGuids,
+            IEnumerable<Guid> imagenGuids,
+            IEnumerable<Guid> incluyeGuids,
+            string usuarioAccion,
+            string ip)
+        {
+            var catGuids = categoriaGuids.Where(g => g != Guid.Empty).Distinct().ToList();
+            var idGuids = idiomaGuids.Where(g => g != Guid.Empty).Distinct().ToList();
+            var imgGuids = imagenGuids.Where(g => g != Guid.Empty).Distinct().ToList();
+            var incGuids = incluyeGuids.Where(g => g != Guid.Empty).Distinct().ToList();
+
+            var categorias = await _context.Categorias
+                .Where(c => c.CatEstado == 'A' && catGuids.Contains(c.CatGuid))
+                .ToDictionaryAsync(c => c.CatGuid, c => c.CatId);
+            var idiomas = await _context.Idiomas
+                .Where(i => i.IdEstado == 'A' && idGuids.Contains(i.IdGuid))
+                .ToDictionaryAsync(i => i.IdGuid, i => i.IdId);
+            var imagenes = await _context.Imagenes
+                .Where(i => i.ImgEstado == 'A' && imgGuids.Contains(i.ImgGuid))
+                .ToDictionaryAsync(i => i.ImgGuid, i => i.ImgId);
+            var incluyes = await _context.Incluyes
+                .Where(i => i.IncEstado == 'A' && incGuids.Contains(i.IncGuid))
+                .ToDictionaryAsync(i => i.IncGuid, i => i.IncId);
+
+            ValidarGuids("Categorías", catGuids, categorias.Keys);
+            ValidarGuids("Idiomas", idGuids, idiomas.Keys);
+            ValidarGuids("Imágenes", imgGuids, imagenes.Keys);
+            ValidarGuids("Incluye", incGuids, incluyes.Keys);
+
+            await using var transaction = await _uow.BeginTransactionAsync();
+            try
+            {
+                var entity = AtraccionDataMapper.ToNewEntity(model);
+                await _uow.Atracciones.AgregarAsync(entity);
+                await _uow.SaveChangesAsync();
+
+                foreach (var catId in categorias.Values)
+                    await _uow.Atracciones.AgregarCategoriaAsync(new CategoriaAtraccionEntity
+                    {
+                        AtId = entity.AtId,
+                        CatId = catId,
+                        CaEstado = 'A',
+                        CaFechaIngreso = DateTime.UtcNow,
+                        CaUsuarioIngreso = usuarioAccion
+                    });
+
+                foreach (var idId in idiomas.Values)
+                    await _uow.Atracciones.AgregarIdiomaAsync(new IdiomaAtraccionEntity
+                    {
+                        AtId = entity.AtId,
+                        IdId = idId,
+                        IaEstado = 'A',
+                        IaFechaIngreso = DateTime.UtcNow,
+                        IaUsuarioIngreso = usuarioAccion
+                    });
+
+                foreach (var imgId in imagenes.Values)
+                    await _uow.Atracciones.AgregarImagenAsync(new ImagenAtraccionEntity
+                    {
+                        AtId = entity.AtId,
+                        ImgId = imgId,
+                        ImaEstado = 'A',
+                        ImaFechaIngreso = DateTime.UtcNow,
+                        ImaUsuarioIngreso = usuarioAccion
+                    });
+
+                foreach (var incId in incluyes.Values)
+                    await _uow.Atracciones.AgregarIncluyeAsync(new AtraccionIncluyeEntity
+                    {
+                        AtId = entity.AtId,
+                        IncId = incId,
+                        AiEstado = 'A',
+                        AiFechaIngreso = DateTime.UtcNow,
+                        AiUsuarioIngreso = usuarioAccion
+                    });
+
+                await _uow.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                model.AtId = entity.AtId;
+                model.AtGuid = entity.AtGuid;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        private static void ValidarGuids(string recurso, IReadOnlyCollection<Guid> solicitados, IEnumerable<Guid> encontrados)
+        {
+            var faltantes = solicitados.Except(encontrados).ToList();
+            if (faltantes.Any())
+                throw new InvalidOperationException($"{recurso} no encontrados o inactivos: {string.Join(", ", faltantes)}.");
         }
 
         public async Task ActualizarAsync(AtraccionDataModel model)

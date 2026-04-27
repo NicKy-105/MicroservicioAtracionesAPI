@@ -64,5 +64,8 @@ namespace Microservicio.Atracciones.DataManagement.Services
 
         public async Task<bool> YaTieneReseniaAsync(int revId)
             => await _uow.Resenias.ObtenerPorReservaAsync(revId) is not null;
+
+        public Task<bool> YaTieneReseniaParaAtraccionAsync(int cliId, int atId)
+            => _uow.Resenias.ExistePorClienteYAtraccionAsync(cliId, atId);
     }
 }

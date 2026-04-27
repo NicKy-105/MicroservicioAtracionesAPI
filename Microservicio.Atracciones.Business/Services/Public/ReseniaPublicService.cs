@@ -15,6 +15,8 @@ namespace Microservicio.Atracciones.Business.Services.Public
         private readonly IAtraccionDataService _atraccionService;
         private readonly IReservaDataService _reservaService;
         private readonly ITicketDataService _ticketService;
+        private readonly IUsuarioDataService _usuarioService;
+        private readonly IClienteDataService _clienteService;
         private readonly ReseniaRules _rules;
 
         public ReseniaPublicService(
@@ -22,19 +24,24 @@ namespace Microservicio.Atracciones.Business.Services.Public
             IAtraccionDataService atraccionService,
             IReservaDataService reservaService,
             ITicketDataService ticketService,
+            IUsuarioDataService usuarioService,
+            IClienteDataService clienteService,
             ReseniaRules rules)
         {
             _reseniaService = reseniaService;
             _atraccionService = atraccionService;
             _reservaService = reservaService;
             _ticketService = ticketService;
+            _usuarioService = usuarioService;
+            _clienteService = clienteService;
             _rules = rules;
         }
 
         public async Task<ReseniaResponse> CrearAsync(
-            CrearReseniaRequest request, int cliId, string usuarioAccion, string ip)
+            CrearReseniaRequest request, Guid usuGuid, string usuarioAccion, string ip)
         {
             ReseniaPublicValidator.Validar(request);
+            var cliId = await ObtenerCliIdAsync(usuGuid);
 
             await _rules.ValidarPuedeResenarAsync(request.RevGuid, cliId);
 
@@ -47,6 +54,8 @@ namespace Microservicio.Atracciones.Business.Services.Public
 
             var ticket = await _ticketService.ObtenerPorIdAsync(horario.TckId)
                 ?? throw new NotFoundException("Ticket", horario.TckId);
+
+            await _rules.ValidarNoHaResenadoAtraccionAsync(cliId, ticket.AtId);
 
             var reseniaModel = new ReseniaDataModel
             {
@@ -62,6 +71,17 @@ namespace Microservicio.Atracciones.Business.Services.Public
 
             var atraccion = await _atraccionService.ObtenerPorIdAsync(ticket.AtId);
             return ReseniaPublicMapper.ToResponse(reseniaModel, atraccion?.AtNombre ?? string.Empty);
+        }
+
+        private async Task<int> ObtenerCliIdAsync(Guid usuGuid)
+        {
+            var usuario = await _usuarioService.ObtenerPorGuidAsync(usuGuid)
+                ?? throw new UnauthorizedBusinessException("El token no corresponde a un usuario activo.");
+
+            var cliente = await _clienteService.ObtenerPorUsuarioIdAsync(usuario.UsuId)
+                ?? throw new NotFoundException("Cliente asociado al usuario", usuGuid);
+
+            return cliente.CliId;
         }
 
         public async Task<IReadOnlyList<ReseniaResponse>> ListarPorAtraccionAsync(Guid atGuid)

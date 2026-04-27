@@ -49,8 +49,26 @@ namespace Microservicio.Atracciones.Business.Services.Admin
                 AtIpIngreso = ip
             };
 
-            await _atraccionService.CrearAsync(model);
-            return AtraccionAdminMapper.ToResponse(model);
+            try
+            {
+                await _atraccionService.CrearConRelacionesAsync(
+                    model,
+                    request.CategoriaGuids,
+                    request.IdiomaGuids,
+                    request.ImagenGuids,
+                    request.IncluyeGuids,
+                    usuarioAccion,
+                    ip);
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("no encontrados o inactivos"))
+            {
+                throw new NotFoundException("Relación de atracción", ex.Message);
+            }
+
+            var creado = await _atraccionService.ObtenerPorGuidAsync(model.AtGuid)
+                ?? throw new NotFoundException("Atraccion", model.AtGuid);
+
+            return AtraccionAdminMapper.ToResponse(creado);
         }
 
         public async Task<AtraccionAdminResponse> ActualizarAsync(Guid atGuid, ActualizarAtraccionRequest request, string usuarioAccion, string ip)

@@ -22,12 +22,19 @@ namespace Microservicio.Atracciones.Business.Rules.Public
             if (reserva.CliId != cliId)
                 throw new ForbiddenBusinessException("No puedes reseñar una reserva que no es tuya.");
 
-            if (reserva.RevEstado == 'C')
-                throw new ConflictException("No se puede reseñar una reserva cancelada.");
+            if (reserva.RevEstado != 'A')
+                throw new ConflictException("Solo se puede reseñar una reserva activa o confirmada.");
 
             var yaExiste = await _reseniaService.YaTieneReseniaAsync(reserva.RevId);
             if (yaExiste)
                 throw new ConflictException("Esta reserva ya tiene una reseña registrada.");
+        }
+
+        public async Task ValidarNoHaResenadoAtraccionAsync(int cliId, int atId)
+        {
+            var yaExiste = await _reseniaService.YaTieneReseniaParaAtraccionAsync(cliId, atId);
+            if (yaExiste)
+                throw new ConflictException("Ya registraste una reseña para esta atracción.");
         }
     }
 }

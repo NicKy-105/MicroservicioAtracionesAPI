@@ -63,9 +63,9 @@ public class AtraccionesController : ControllerBase
     //[ResponseCache(CacheProfileName = CacheProfileNames.Filtros, VaryByQueryKeys = new[] { "ciudad" })]
     [ProducesResponseType(typeof(ApiItemResponse<FiltrosAtraccionResponse>), 200)]
     [ProducesResponseType(typeof(ApiErrorResponse), 400)]
-    public async Task<IActionResult> ObtenerFiltros([FromQuery] string? ciudad)
+    public async Task<IActionResult> ObtenerFiltros()
     {
-        var filtros = await _service.ObtenerFiltrosAsync(ciudad);
+        var filtros = await _service.ObtenerFiltrosAsync();
         var response = AtraccionesApiMapper.ToFiltrosResponse(filtros);
         return Ok(response);
     }

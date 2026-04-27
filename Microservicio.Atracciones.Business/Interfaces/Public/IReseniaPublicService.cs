@@ -4,7 +4,7 @@ namespace Microservicio.Atracciones.Business.Interfaces.Public
 {
     public interface IReseniaPublicService
     {
-        Task<ReseniaResponse> CrearAsync(CrearReseniaRequest request, int cliId, string usuarioAccion, string ip);
+        Task<ReseniaResponse> CrearAsync(CrearReseniaRequest request, Guid usuGuid, string usuarioAccion, string ip);
         Task<IReadOnlyList<ReseniaResponse>> ListarPorAtraccionAsync(Guid atGuid);
     }
 }

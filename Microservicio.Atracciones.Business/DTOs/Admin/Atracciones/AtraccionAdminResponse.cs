@@ -17,5 +17,10 @@ namespace Microservicio.Atracciones.Business.DTOs.Admin.Atracciones
         public char Estado { get; set; }
         public int TotalResenias { get; set; }
         public DateTime FechaIngreso { get; set; }
+        public string? ImagenPrincipal { get; set; }
+        public IList<string> Idiomas { get; set; } = new List<string>();
+        public IList<string> Categorias { get; set; } = new List<string>();
+        public IList<string> Imagenes { get; set; } = new List<string>();
+        public IList<string> Incluyes { get; set; } = new List<string>();
     }
 }

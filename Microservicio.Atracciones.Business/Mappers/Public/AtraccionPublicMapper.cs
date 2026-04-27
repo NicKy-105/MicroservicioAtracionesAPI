@@ -149,6 +149,16 @@ namespace Microservicio.Atracciones.Business.Mappers.Public
             // Categorías hijo = con parent
             var hijo = categorias.FirstOrDefault(c => c.CatParentId is not null);
 
+            if (raiz is null && hijo?.ParentGuid is not null)
+            {
+                return (
+                    hijo.ParentGuid.Value.ToString(),
+                    hijo.ParentNombre ?? string.Empty,
+                    hijo.CatGuid.ToString(),
+                    hijo.CatNombre
+                );
+            }
+
             return (
                 raiz?.CatGuid.ToString() ?? string.Empty,
                 raiz?.CatNombre ?? string.Empty,

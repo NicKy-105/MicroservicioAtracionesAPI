@@ -18,7 +18,12 @@ namespace Microservicio.Atracciones.Business.Mappers.Admin
                 Disponible = model.AtDisponible,
                 Estado = model.AtEstado,
                 TotalResenias = model.AtTotalResenias,
-                FechaIngreso = model.AtFechaIngreso
+                FechaIngreso = model.AtFechaIngreso,
+                ImagenPrincipal = model.Imagenes.FirstOrDefault()?.ImgUrl,
+                Idiomas = model.Idiomas.Select(i => i.IdDescripcion).ToList(),
+                Categorias = model.Categorias.Select(c => c.CatNombre).ToList(),
+                Imagenes = model.Imagenes.Select(i => i.ImgUrl).ToList(),
+                Incluyes = model.Incluyes.Select(i => i.IncDescripcion).ToList()
             };
     }
 }

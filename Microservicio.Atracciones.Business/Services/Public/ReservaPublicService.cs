@@ -15,6 +15,8 @@ namespace Microservicio.Atracciones.Business.Services.Public
         private readonly IReservaDataService _reservaService;
         private readonly ITicketDataService _ticketService;
         private readonly IAtraccionDataService _atraccionService;  // #7: para obtener nombre real
+        private readonly IUsuarioDataService _usuarioService;
+        private readonly IClienteDataService _clienteService;
         private readonly ReservaRules _rules;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -22,20 +24,25 @@ namespace Microservicio.Atracciones.Business.Services.Public
             IReservaDataService reservaService,
             ITicketDataService ticketService,
             IAtraccionDataService atraccionService,
+            IUsuarioDataService usuarioService,
+            IClienteDataService clienteService,
             ReservaRules rules,
             IUnitOfWork unitOfWork)
         {
             _reservaService = reservaService;
             _ticketService = ticketService;
             _atraccionService = atraccionService;
+            _usuarioService = usuarioService;
+            _clienteService = clienteService;
             _rules = rules;
             _unitOfWork = unitOfWork;
         }
 
         public async Task<ReservaResponse> CrearAsync(
-            CrearReservaRequest request, int cliId, string usuarioAccion, string ip)
+            CrearReservaRequest request, Guid usuGuid, string usuarioAccion, string ip)
         {
             ReservaPublicValidator.Validar(request);
+            var cliId = await ObtenerCliIdAsync(usuGuid);
 
             using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
@@ -123,8 +130,9 @@ namespace Microservicio.Atracciones.Business.Services.Public
             }
         }
 
-        public async Task<ReservaResponse> ObtenerPorGuidAsync(Guid revGuid, int cliId)
+        public async Task<ReservaResponse> ObtenerPorGuidAsync(Guid revGuid, Guid usuGuid)
         {
+            var cliId = await ObtenerCliIdAsync(usuGuid);
             var reserva = await _reservaService.ObtenerPorGuidAsync(revGuid)
                 ?? throw new NotFoundException("Reserva", revGuid);
 
@@ -147,8 +155,9 @@ namespace Microservicio.Atracciones.Business.Services.Public
             return ReservaPublicMapper.ToResponse(reserva, horario, atraccionNombre);
         }
 
-        public async Task<DataPagedResult<ReservaResponse>> ListarPorClienteAsync(int cliId, int page, int limit)
+        public async Task<DataPagedResult<ReservaResponse>> ListarPorClienteAsync(Guid usuGuid, int page, int limit)
         {
+            var cliId = await ObtenerCliIdAsync(usuGuid);
             var paged = await _reservaService.ListarPorClienteAsync(cliId, page, limit);
             var list = new List<ReservaResponse>();
 
@@ -161,6 +170,17 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 list.Add(ReservaPublicMapper.ToResponse(reserva, horario, atraccionNombre));
             }
             return new DataPagedResult<ReservaResponse>(list, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
+        }
+
+        private async Task<int> ObtenerCliIdAsync(Guid usuGuid)
+        {
+            var usuario = await _usuarioService.ObtenerPorGuidAsync(usuGuid)
+                ?? throw new UnauthorizedBusinessException("El token no corresponde a un usuario activo.");
+
+            var cliente = await _clienteService.ObtenerPorUsuarioIdAsync(usuario.UsuId)
+                ?? throw new NotFoundException("Cliente asociado al usuario", usuGuid);
+
+            return cliente.CliId;
         }
 
     }

@@ -25,15 +25,15 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         public ReservasController(IReservaPublicService service)
             => _service = service;
 
-        private int CliIdActual
+        private Guid UsuGuidActual
         {
             get
             {
-                var claim = User.FindFirstValue("cli_id");
-                if (!int.TryParse(claim, out var cliId) || cliId <= 0)
-                    throw new UnauthorizedBusinessException("El token no tiene un cliente asociado.");
+                var claim = User.FindFirstValue("usu_guid");
+                if (!Guid.TryParse(claim, out var usuGuid))
+                    throw new UnauthorizedBusinessException("El token no tiene un usuario válido.");
 
-                return cliId;
+                return usuGuid;
             }
         }
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
@@ -43,7 +43,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         [ProducesResponseType(typeof(ApiListResponse<ReservaResponse>), 200)]
         public async Task<IActionResult> ListarMisReservas([FromQuery] int page = 1, [FromQuery] int limit = 10)
         {
-            var resultado = await _service.ListarPorClienteAsync(CliIdActual, page, limit);
+            var resultado = await _service.ListarPorClienteAsync(UsuGuidActual, page, limit);
             var response = new ApiListResponse<ReservaResponse>(resultado.Items, resultado.TotalFiltrado, page, limit);
             return Ok(response);
         }
@@ -61,7 +61,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         [ProducesResponseType(typeof(ApiErrorResponse), 409)]
         public async Task<IActionResult> Crear([FromBody] CrearReservaRequest request)
         {
-            var reserva = await _service.CrearAsync(request, CliIdActual, UsuarioAccion, IpActual);
+            var reserva = await _service.CrearAsync(request, UsuGuidActual, UsuarioAccion, IpActual);
             var response = ReservasApiMapper.ToResponse(reserva, statusCode: 201);
             return StatusCode(201, response);
         }
@@ -77,7 +77,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]
         public async Task<IActionResult> ObtenerPorGuid(Guid guid)
         {
-            var reserva = await _service.ObtenerPorGuidAsync(guid, CliIdActual);
+            var reserva = await _service.ObtenerPorGuidAsync(guid, UsuGuidActual);
             var response = ReservasApiMapper.ToResponse(reserva);
             return Ok(response);
         }

@@ -15,5 +15,6 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task ActualizarAsync(ReseniaDataModel model);
         Task EliminarLogicoAsync(int rsnId, string usuarioAccion, string ip);
         Task<bool> YaTieneReseniaAsync(int revId);
+        Task<bool> YaTieneReseniaParaAtraccionAsync(int cliId, int atId);
     }
 }

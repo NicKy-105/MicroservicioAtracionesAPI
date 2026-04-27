@@ -25,6 +25,14 @@ namespace Microservicio.Atracciones.DataAccess.Repositories
         public async Task<ReseniaEntity?> ObtenerPorReservaAsync(int revId)
             => await _context.Resenias.FirstOrDefaultAsync(x => x.RevId == revId);
 
+        public async Task<bool> ExistePorClienteYAtraccionAsync(int cliId, int atId)
+            => await _context.Resenias
+                .AsNoTracking()
+                .AnyAsync(x =>
+                    x.RsnEstado == 'A' &&
+                    x.AtId == atId &&
+                    x.Reserva.CliId == cliId);
+
         public async Task<IReadOnlyList<ReseniaEntity>> ListarPorAtraccionAsync(int atId)
             => await _context.Resenias
                 .AsNoTracking()

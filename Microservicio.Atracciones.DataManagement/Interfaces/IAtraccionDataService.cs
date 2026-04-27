@@ -13,6 +13,14 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task<AtraccionDataModel?> ObtenerPorGuidAsync(Guid atGuid);
         Task<DataPagedResult<AtraccionDataModel>> ListarConFiltrosAsync(AtraccionFiltroDataModel filtro);
         Task CrearAsync(AtraccionDataModel model);
+        Task CrearConRelacionesAsync(
+            AtraccionDataModel model,
+            IEnumerable<Guid> categoriaGuids,
+            IEnumerable<Guid> idiomaGuids,
+            IEnumerable<Guid> imagenGuids,
+            IEnumerable<Guid> incluyeGuids,
+            string usuarioAccion,
+            string ip);
         Task ActualizarAsync(AtraccionDataModel model);
         Task EliminarLogicoAsync(int atId, string usuarioAccion, string ip);
 

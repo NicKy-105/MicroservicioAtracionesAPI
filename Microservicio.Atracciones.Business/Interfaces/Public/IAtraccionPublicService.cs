@@ -7,7 +7,7 @@ namespace Microservicio.Atracciones.Business.Interfaces.Public
     {
         Task<DataPagedResult<AtraccionListadoResponse>> ListarAsync(AtraccionFiltroRequest request, string baseUrl);
         Task<AtraccionDetalleResponse> ObtenerPorGuidAsync(Guid atGuid, string baseUrl);
-        Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync(string? ciudad);
+        Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync();
     }
 
 }

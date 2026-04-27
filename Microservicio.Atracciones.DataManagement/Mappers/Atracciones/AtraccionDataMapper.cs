@@ -139,7 +139,9 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Atracciones
                 CatGuid = cat.CatGuid,
                 CatParentId = cat.CatParentId,
                 CatNombre = cat.CatNombre,
-                CatEstado = cat.CatEstado
+                CatEstado = cat.CatEstado,
+                ParentGuid = cat.Parent?.CatGuid,
+                ParentNombre = cat.Parent?.CatNombre
             };
         }
     }

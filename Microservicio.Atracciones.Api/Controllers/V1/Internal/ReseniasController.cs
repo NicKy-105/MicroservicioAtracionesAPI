@@ -23,15 +23,15 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
         public ReseniasController(IReseniaPublicService service)
             => _service = service;
 
-        private int CliIdActual
+        private Guid UsuGuidActual
         {
             get
             {
-                var claim = User.FindFirstValue("cli_id");
-                if (!int.TryParse(claim, out var cliId) || cliId <= 0)
-                    throw new UnauthorizedBusinessException("El token no tiene un cliente asociado.");
+                var claim = User.FindFirstValue("usu_guid");
+                if (!Guid.TryParse(claim, out var usuGuid))
+                    throw new UnauthorizedBusinessException("El token no tiene un usuario válido.");
 
-                return cliId;
+                return usuGuid;
             }
         }
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
@@ -66,7 +66,7 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
         [ProducesResponseType(typeof(ApiErrorResponse), 409)]
         public async Task<IActionResult> Crear([FromBody] CrearReseniaRequest request)
         {
-            var resenia = await _service.CrearAsync(request, CliIdActual, UsuarioAccion, IpActual);
+            var resenia = await _service.CrearAsync(request, UsuGuidActual, UsuarioAccion, IpActual);
             var response = ReseniasApiMapper.ToResponse(resenia, statusCode: 201);
             return StatusCode(201, response);
         }
