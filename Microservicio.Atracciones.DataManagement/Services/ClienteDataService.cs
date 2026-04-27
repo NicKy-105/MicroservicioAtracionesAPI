@@ -25,6 +25,12 @@ namespace Microservicio.Atracciones.DataManagement.Services
             return ClienteDataMapper.ToDataModel(entity);
         }
 
+        public async Task<ClienteDataModel?> ObtenerPorUsuarioIdAsync(int usuId)
+        {
+            var entity = await _uow.Clientes.ObtenerPorUsuarioIdAsync(usuId);
+            return ClienteDataMapper.ToDataModel(entity);
+        }
+
         public async Task<ClienteDataModel?> ObtenerPorNumeroIdentificacionAsync(string numero)
         {
             var entity = await _uow.Clientes.ObtenerPorNumeroIdentificacionAsync(numero);

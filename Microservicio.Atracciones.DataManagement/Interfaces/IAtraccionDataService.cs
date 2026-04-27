@@ -17,7 +17,7 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task EliminarLogicoAsync(int atId, string usuarioAccion, string ip);
 
         // E-03: categorías raíz con hijos para los filtros — consulta eficiente en BD
-        Task<IReadOnlyList<CategoriaDataModel>> ObtenerCategoriasPorCiudadAsync(string ciudad);
+        Task<IReadOnlyList<CategoriaDataModel>> ObtenerCategoriasPorCiudadAsync(string? ciudad);
         Task AgregarCategoriaAsync(int atId, int catId, string usuarioAccion, string ip);
         Task AgregarIdiomaAsync(int atId, int idId, string usuarioAccion, string ip);
         Task AgregarImagenAsync(int atId, int imgId, string usuarioAccion, string ip);

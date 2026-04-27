@@ -45,8 +45,8 @@ namespace Microservicio.Atracciones.Business.Validators.Public
 
         public static void ValidarCiudadFiltros(string? ciudad)
         {
-            if (string.IsNullOrWhiteSpace(ciudad))
-                throw new ValidationException("El parámetro 'ciudad' es obligatorio para obtener filtros.");
+            if (ciudad is not null && string.IsNullOrWhiteSpace(ciudad))
+                throw new ValidationException("El parámetro 'ciudad' no puede estar vacío.");
         }
     }
 }

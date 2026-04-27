@@ -4,7 +4,7 @@ using Microservicio.Atracciones.Api.Services;
 using Microservicio.Atracciones.Business.DTOs.Auth;
 using Microservicio.Atracciones.Business.Interfaces.Auth;
 using Microservicio.Atracciones.Business.Interfaces.Admin;
-using Microservicio.Atracciones.Business.DTOs.Admin.Usuarios;
+using Microservicio.Atracciones.Business.DTOs.Admin.Clientes;
 using Microservicio.Atracciones.DataManagement.Models.Seguridad;
 using Microsoft.AspNetCore.Mvc;
 
@@ -18,13 +18,13 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Auth
     {
         private readonly IAuthService _authService;
         private readonly TokenService _tokenService;
-        private readonly IUsuarioAdminService _usuarioAdminService;
+        private readonly IClienteAdminService _clienteAdminService;
 
-        public AuthController(IAuthService authService, TokenService tokenService, IUsuarioAdminService usuarioAdminService)
+        public AuthController(IAuthService authService, TokenService tokenService, IClienteAdminService clienteAdminService)
         {
             _authService = authService;
             _tokenService = tokenService;
-            _usuarioAdminService = usuarioAdminService;
+            _clienteAdminService = clienteAdminService;
         }
 
         [HttpPost("login")]
@@ -60,18 +60,30 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Auth
         [ProducesResponseType(typeof(ApiItemResponse<LoginResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
         [ProducesResponseType(typeof(ApiErrorResponse), 500)]
-        public async Task<IActionResult> Registro([FromBody] LoginRequest request)
+        public async Task<IActionResult> Registro([FromBody] RegistroClienteRequest request)
         {
-            var crearRequest = new CrearUsuarioRequest
+            var crearRequest = new CrearClienteRequest
             {
                 Login = request.Login,
                 Password = request.Password,
-                Roles = new List<string> { "CLIENTE" }
+                TipoIdentificacion = request.TipoIdentificacion,
+                NumeroIdentificacion = request.NumeroIdentificacion,
+                Nombres = request.Nombres,
+                Apellidos = request.Apellidos,
+                Correo = request.Correo,
+                Telefono = request.Telefono
             };
 
-            await _usuarioAdminService.CrearAsync(crearRequest, "publico", HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0");
+            await _clienteAdminService.CrearAsync(
+                crearRequest,
+                "publico",
+                HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0");
 
-            var userDto = await _authService.ValidarCredencialesAsync(request);
+            var userDto = await _authService.ValidarCredencialesAsync(new LoginRequest
+            {
+                Login = request.Login,
+                Password = request.Password
+            });
 
             var (token, expiracion) = _tokenService.GenerarToken(new LoginDataModel
             {

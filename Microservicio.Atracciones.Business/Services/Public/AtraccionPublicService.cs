@@ -76,7 +76,7 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 model, disponibilidad, tickets, horarios, baseUrl, model.DesNombre);
         }
 
-        public async Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync(string ciudad)
+        public async Task<FiltrosAtraccionResponse> ObtenerFiltrosAsync(string? ciudad)
         {
             AtraccionPublicValidator.ValidarCiudadFiltros(ciudad);
 
@@ -84,23 +84,25 @@ namespace Microservicio.Atracciones.Business.Services.Public
             var atracciones = (await _atraccionService.ListarConFiltrosAsync(
                 new AtraccionFiltroDataModel { Ciudad = ciudad, Limit = 200 })).Items;
 
-            var totalCiudad = atracciones.Count;
-            var destino = await _destinoService.ObtenerPorNombreAsync(ciudad);
+            var total = atracciones.Count;
+            var destinos = string.IsNullOrWhiteSpace(ciudad)
+                ? await _destinoService.ListarActivosAsync()
+                : (await _destinoService.ObtenerPorNombreAsync(ciudad)) is { } destino
+                    ? new[] { destino }
+                    : Array.Empty<DataManagement.Models.Catalogos.DestinoDataModel>();
 
             // #8: Count real por cada destino — ya no siempre 0 para los que no son la ciudad buscada
-            var destinationFilters = new List<OpcionFiltroResponse>();
-            if (destino is not null)
-            {
-                destinationFilters.Add(new OpcionFiltroResponse
+            var destinationFilters = destinos
+                .Select(destino => new OpcionFiltroResponse
                 {
                     Name         = destino.DesNombre,
                     Tagname      = destino.DesGuid.ToString(),
-                    ProductCount = totalCiudad,
+                    ProductCount = atracciones.Count(a => a.DesId == destino.DesId),
                     Image        = destino.DesImagenUrl is not null
                                    ? new ImagenFiltroResponse { Url = destino.DesImagenUrl }
                                    : null
-                });
-            }
+                })
+                .ToList();
 
             // #5: Todos los helpers usan la misma lista cargada (excepto categorías que usa query optimizada)
             // E-03: Obtener estructura jerárquica real desde BD y contar atracciones
@@ -178,7 +180,12 @@ namespace Microservicio.Atracciones.Business.Services.Public
                 }).ToList(),
                 UfiFilters = new List<OpcionFiltroResponse>
                 {
-                    new() { Name = ciudad, Tagname = ciudad.ToLower(), ProductCount = totalCiudad }
+                    new()
+                    {
+                        Name = string.IsNullOrWhiteSpace(ciudad) ? "Todos" : ciudad,
+                        Tagname = string.IsNullOrWhiteSpace(ciudad) ? "todos" : ciudad.ToLower(),
+                        ProductCount = total
+                    }
                 }
             };
         }

@@ -133,17 +133,28 @@ public class AtraccionQueryRepository
             .Include(x => x.Resenias.Where(r => r.RsnEstado == 'A'))
             .FirstOrDefaultAsync(x => x.AtGuid == atGuid && x.AtEstado == 'A');
 
-    public async Task<List<CategoriaEntity>> ObtenerCategoriasPorCiudadAsync(string ciudad)
-        => await _context.Categorias
+    public async Task<List<CategoriaEntity>> ObtenerCategoriasPorCiudadAsync(string? ciudad)
+    {
+        var query = _context.Categorias
             .AsNoTracking()
             .Where(c => c.CatEstado == 'A' &&
                         c.CategoriasAtracciones.Any(ca =>
                             ca.CaEstado == 'A' &&
-                            ca.Atraccion.AtEstado == 'A' &&
-                            EF.Functions.ILike(ca.Atraccion.Destino.DesNombre, ciudad.Trim())))
+                            ca.Atraccion.AtEstado == 'A'));
+
+        if (!string.IsNullOrWhiteSpace(ciudad))
+        {
+            query = query.Where(c => c.CategoriasAtracciones.Any(ca =>
+                ca.CaEstado == 'A' &&
+                ca.Atraccion.AtEstado == 'A' &&
+                EF.Functions.ILike(ca.Atraccion.Destino.DesNombre, ciudad.Trim())));
+        }
+
+        return await query
             .Include(c => c.Hijos.Where(h => h.CatEstado == 'A'))
             .Where(c => c.CatParentId == null)
             .ToListAsync();
+    }
 
     public async Task<List<IdiomaEntity>> ObtenerIdiomasPorCiudadAsync(string ciudad)
         => await _context.Idiomas

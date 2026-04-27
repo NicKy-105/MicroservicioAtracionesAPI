@@ -73,6 +73,7 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<IAtraccionPublicService, AtraccionPublicService>();
             services.AddScoped<IReservaPublicService, ReservaPublicService>();
             services.AddScoped<IReseniaPublicService, ReseniaPublicService>();
+            services.AddScoped<IClientePerfilService, ClientePerfilService>();
 
             // ── Business — Admin Services ──────────────────────────────
             services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();

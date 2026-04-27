@@ -26,6 +26,11 @@ namespace Microservicio.Atracciones.DataAccess.Repositories
                 .Include(x => x.Usuario)
                 .FirstOrDefaultAsync(x => x.CliGuid == cliGuid && x.CliEstado == 'A');
 
+        public async Task<ClienteEntity?> ObtenerPorUsuarioIdAsync(int usuId)
+            => await _context.Clientes
+                .Include(x => x.Usuario)
+                .FirstOrDefaultAsync(x => x.UsuId == usuId && x.CliEstado == 'A');
+
         public async Task<ClienteEntity?> ObtenerPorNumeroIdentificacionAsync(string numeroIdentificacion)
             => await _context.Clientes
                 .FirstOrDefaultAsync(x => x.CliNumeroIdentificacion == numeroIdentificacion && x.CliEstado == 'A');

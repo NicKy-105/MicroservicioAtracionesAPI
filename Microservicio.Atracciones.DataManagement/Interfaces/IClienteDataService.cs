@@ -9,6 +9,7 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
     {
         Task<ClienteDataModel?> ObtenerPorIdAsync(int cliId);
         Task<ClienteDataModel?> ObtenerPorGuidAsync(Guid cliGuid);
+        Task<ClienteDataModel?> ObtenerPorUsuarioIdAsync(int usuId);
         Task<ClienteDataModel?> ObtenerPorNumeroIdentificacionAsync(string numero);
         Task<IReadOnlyList<ClienteDataModel>> ListarAsync();
         Task CrearAsync(ClienteDataModel model);

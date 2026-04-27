@@ -6,6 +6,7 @@ namespace Microservicio.Atracciones.DataAccess.Repositories.Interfaces
     {
         Task<ClienteEntity?> ObtenerPorIdAsync(int cliId);
         Task<ClienteEntity?> ObtenerPorGuidAsync(Guid cliGuid);
+        Task<ClienteEntity?> ObtenerPorUsuarioIdAsync(int usuId);
         Task<ClienteEntity?> ObtenerPorNumeroIdentificacionAsync(string numeroIdentificacion);
         Task<IReadOnlyList<ClienteEntity>> ListarAsync();
         Task AgregarAsync(ClienteEntity cliente);

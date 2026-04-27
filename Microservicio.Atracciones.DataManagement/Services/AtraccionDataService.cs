@@ -121,7 +121,7 @@ namespace Microservicio.Atracciones.DataManagement.Services
         }
 
         // E-03: Consulta dedicada para categorías raíz con sus hijos (para type_filters jerárquicos)
-        public async Task<IReadOnlyList<CategoriaDataModel>> ObtenerCategoriasPorCiudadAsync(string ciudad)
+        public async Task<IReadOnlyList<CategoriaDataModel>> ObtenerCategoriasPorCiudadAsync(string? ciudad)
         {
             var raices = await _queryRepo.ObtenerCategoriasPorCiudadAsync(ciudad);
 
