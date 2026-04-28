@@ -1,6 +1,8 @@
 using Microservicio.Atracciones.Business.DTOs.Public.Reservas;
+using Microservicio.Atracciones.Business.DTOs.Admin.Facturas;
 using Microservicio.Atracciones.Business.Exceptions;
 using Microservicio.Atracciones.Business.Interfaces.Public;
+using Microservicio.Atracciones.Business.Mappers.Admin;
 using Microservicio.Atracciones.Business.Mappers.Public;
 using Microservicio.Atracciones.Business.Rules.Public;
 using Microservicio.Atracciones.Business.Validators.Public;
@@ -8,6 +10,8 @@ using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Models.Reservas;
 using Microservicio.Atracciones.DataManagement.Models.Common;
 using Microservicio.Atracciones.DataManagement.Models.Clientes;
+using Microservicio.Atracciones.DataManagement.Models.Facturacion;
+using EmailAddressAttribute = System.ComponentModel.DataAnnotations.EmailAddressAttribute;
 
 namespace Microservicio.Atracciones.Business.Services.Public
 {
@@ -18,6 +22,7 @@ namespace Microservicio.Atracciones.Business.Services.Public
         private readonly IAtraccionDataService _atraccionService;  // #7: para obtener nombre real
         private readonly IUsuarioDataService _usuarioService;
         private readonly IClienteDataService _clienteService;
+        private readonly IFacturaDataService _facturaService;
         private readonly ReservaRules _rules;
         private readonly IUnitOfWork _unitOfWork;
 
@@ -27,6 +32,7 @@ namespace Microservicio.Atracciones.Business.Services.Public
             IAtraccionDataService atraccionService,
             IUsuarioDataService usuarioService,
             IClienteDataService clienteService,
+            IFacturaDataService facturaService,
             ReservaRules rules,
             IUnitOfWork unitOfWork)
         {
@@ -35,6 +41,7 @@ namespace Microservicio.Atracciones.Business.Services.Public
             _atraccionService = atraccionService;
             _usuarioService = usuarioService;
             _clienteService = clienteService;
+            _facturaService = facturaService;
             _rules = rules;
             _unitOfWork = unitOfWork;
         }
@@ -218,6 +225,71 @@ namespace Microservicio.Atracciones.Business.Services.Public
             }
         }
 
+        public async Task<FacturaResponse> ConfirmarPagoAsync(
+            Guid revGuid,
+            ConfirmarPagoReservaRequest request,
+            string usuarioAccion,
+            string ip)
+        {
+            ValidarConfirmacionPago(request);
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                var reserva = await _reservaService.ObtenerPorGuidAsync(revGuid)
+                    ?? throw new NotFoundException("Reserva", revGuid);
+
+                if (reserva.RevEstado == 'C')
+                    throw new ConflictException("La reserva está cancelada y no puede ser facturada");
+
+                var facturaExistente = await _facturaService.ObtenerPorReservaAsync(reserva.RevId);
+                if (facturaExistente is not null)
+                    throw new ConflictException("Esta reserva ya fue facturada");
+
+                var totalPersonas = reserva.Detalle.Sum(d => d.RdetCantidad);
+                var horario = await _ticketService.ObtenerHorarioPorIdAsync(reserva.HorId)
+                    ?? throw new NotFoundException("Horario", reserva.HorId);
+
+                if (horario.HorCuposDisponibles < totalPersonas)
+                    throw new ConflictException("Sin disponibilidad suficiente para confirmar la reserva");
+
+                await _reservaService.ActualizarEstadoAsync(reserva.RevId, 'A', string.Empty, usuarioAccion, ip);
+
+                horario.HorCuposDisponibles -= totalPersonas;
+                horario.HorUsuarioMod = usuarioAccion;
+                horario.HorIpMod = ip;
+                await _ticketService.ActualizarHorarioAsync(horario);
+
+                var factura = new FacturaDataModel
+                {
+                    RevId = reserva.RevId,
+                    FacNumero = await _facturaService.GenerarNumeroSecuencialAsync(DateTime.UtcNow.Year),
+                    FacTotal = reserva.RevTotal,
+                    FacObservacion = request.Observacion?.Trim(),
+                    FacOrigenCanal = reserva.RevOrigenCanal,
+                    FacUsuarioIngreso = usuarioAccion,
+                    FacIpIngreso = ip,
+                    DatosFacturacion = new DatosFacturacionDataModel
+                    {
+                        DfacNombre = request.NombreReceptor.Trim(),
+                        DfacApellido = request.ApellidoReceptor?.Trim(),
+                        DfacCorreo = request.CorreoReceptor.Trim(),
+                        DfacTelefono = request.TelefonoReceptor?.Trim()
+                    }
+                };
+
+                await _facturaService.CrearAsync(factura);
+                await transaction.CommitAsync();
+
+                return FacturaAdminMapper.ToResponse(factura, reserva.RevCodigo);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         private async Task<int> ObtenerCliIdAsync(Guid usuGuid)
         {
             var usuario = await _usuarioService.ObtenerPorGuidAsync(usuGuid)
@@ -285,5 +357,24 @@ namespace Microservicio.Atracciones.Business.Services.Public
             return clienteModel.CliId;
         }
 
+        private static void ValidarConfirmacionPago(ConfirmarPagoReservaRequest request)
+        {
+            var errores = new List<string>();
+
+            if (string.IsNullOrWhiteSpace(request.NombreReceptor))
+                errores.Add("El nombre del receptor es obligatorio.");
+
+            if (string.IsNullOrWhiteSpace(request.CorreoReceptor))
+            {
+                errores.Add("El correo del receptor es obligatorio.");
+            }
+            else if (!new EmailAddressAttribute().IsValid(request.CorreoReceptor))
+            {
+                errores.Add("El correo del receptor no tiene un formato válido.");
+            }
+
+            if (errores.Any())
+                throw new ValidationException(errores);
+        }
     }
 }

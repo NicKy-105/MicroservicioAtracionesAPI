@@ -319,6 +319,7 @@ Microservicio.Atracciones.Business
 │       │   └── ReseniaResponse.cs
 │       └── Reservas
 │           ├── CancelarReservaRequest.cs
+│           ├── ConfirmarPagoReservaRequest.cs
 │           ├── CrearReservaRequest.cs
 │           ├── ReservaDetalleRequest.cs
 │           ├── ReservaDetalleResponse.cs
@@ -436,7 +437,7 @@ Microservicio.Atracciones.Business
 **Propósito:** Interfaz de comunicación externa, manejo de protocolos HTTP y preocupaciones transversales.
 
 **Explicación Detallada:**
-Esta capa es el punto de entrada al microservicio. Su responsabilidad es recibir las peticiones HTTP, autenticar a los usuarios mediante **JWT (JSON Web Tokens)**, validar que los datos cumplan con el esquema básico y delegar la ejecución a la capa de negocio. También implementa el **Manejo Global de Excepciones** para asegurar que el cliente siempre reciba una respuesta estructurada (JSON) incluso en caso de error crítico. Además, configura la caché de respuestas y la documentación automática con **Swagger**.
+Esta capa es el punto de entrada al microservicio. Su responsabilidad es recibir las peticiones HTTP, autenticar a los usuarios mediante **JWT (JSON Web Tokens)** con soporte para `usu_guid` y `cli_id`, validar que los datos cumplan con el esquema básico y delegar la ejecución a la capa de negocio. Implementa políticas de autorización basadas en roles (**SoloAdmin**, **ClienteAutenticado**, **AdminOCliente**) y maneja el **Manejo Global de Excepciones** para asegurar que el cliente siempre reciba una respuesta estructurada (JSON). Además, configura la caché de respuestas y la documentación automática con **Swagger**.
 
 ### Estructura de la Capa
 ```text
@@ -549,17 +550,33 @@ Microservicio.Atracciones.Api
 | `POST` | `/api/v1/admin/atracciones` | Crea una nueva atracción con sus imágenes, idiomas y categorías. |
 | `PUT` | `/api/v1/admin/atracciones/{guid}` | Actualiza todos los datos de una atracción existente. |
 | `DELETE` | `/api/v1/admin/atracciones/{guid}` | Elimina de forma lógica una atracción. |
-| `GET` | `/api/v1/admin/catalogos` | Obtiene catálogos maestros para llenar formularios (idiomas, categorías). |
+| `GET` | `/api/v1/admin/categorias` | Lista todas las categorías maestras. |
+| `POST` | `/api/v1/admin/categorias` | Crea una nueva categoría (soporta jerarquías). |
+| `PUT` | `/api/v1/admin/categorias/{guid}` | Actualiza el nombre o padre de una categoría. |
+| `DELETE` | `/api/v1/admin/categorias/{guid}` | Elimina de forma lógica una categoría. |
+| `GET` | `/api/v1/admin/idiomas` | Lista todos los idiomas disponibles. |
+| `POST` | `/api/v1/admin/idiomas` | Registra un nuevo idioma. |
+| `PUT` | `/api/v1/admin/idiomas/{guid}` | Actualiza la descripción de un idioma. |
+| `DELETE` | `/api/v1/admin/idiomas/{guid}` | Elimina un idioma del catálogo. |
+| `GET` | `/api/v1/admin/incluye` | Lista los ítems de inclusión (lo que incluye la entrada). |
+| `POST` | `/api/v1/admin/incluye` | Crea un nuevo ítem de inclusión. |
 | `GET` | `/api/v1/admin/reservas` | Consulta el historial global de reservas realizadas. |
 
 ### Endpoints Públicos (Acceso Abierto / Cliente)
 | Método | Endpoint | Funcionalidad Breve |
 | :--- | :--- | :--- |
-| `GET` | `/api/v1/atracciones` | Listado paginado de atracciones para el usuario final. |
+| `GET` | `/api/v1/atracciones` | Listado paginado de atracciones con filtros avanzados (ciudad, calificacion, etc). |
+| `GET` | `/api/v1/atracciones/filtros` | Obtiene opciones de filtrado dinámico y estadísticas según la ciudad. |
 | `GET` | `/api/v1/atracciones/{guid}` | Detalle completo de una atracción específica. |
-| `POST` | `/api/v1/reservas` | Crea una reserva (permite clientes invitados o autenticados). |
-| `GET` | `/api/v1/reservas/{guid}` | Obtiene el detalle de una reserva específica del cliente. |
+| `GET` | `/api/v1/atracciones/{guid}/tickets` | Lista los tipos de tickets disponibles para una atracción. |
+| `GET` | `/api/v1/atracciones/{guid}/horarios-disponibles` | Consulta los próximos horarios con cupos para la atracción. |
+| `GET` | `/api/v1/reservas` | Historial de reservas del cliente autenticado. |
+| `POST` | `/api/v1/reservas` | Crea una reserva (cabecera + detalle) con descuento de cupos. |
+| `GET` | `/api/v1/reservas/{guid}` | Obtiene el detalle de una reserva específica. |
+| `POST` | `/api/v1/reservas/{guid}/confirmar-pago` | Procesa el pago y genera la factura legal (IVA 15%). |
+| `PUT` | `/api/v1/reservas/{guid}/cancelar` | Cancela una reserva pendiente y libera cupos. |
+| `GET` | `/api/v1/resenias?atraccionGuid={guid}` | Lista reseñas públicas de una atracción. |
+| `POST` | `/api/v1/resenias` | Permite a un cliente calificar una atracción tras su visita. |
 | `POST` | `/api/v1/auth/login` | Autenticación de usuarios para obtener token JWT. |
-| `GET` | `/api/v1/atracciones/filtros` | Obtiene opciones de filtrado dinámico según la ciudad seleccionada. |
 
 

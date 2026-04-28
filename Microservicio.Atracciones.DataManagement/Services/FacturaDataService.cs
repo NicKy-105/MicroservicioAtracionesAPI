@@ -52,6 +52,8 @@ namespace Microservicio.Atracciones.DataManagement.Services
 
             model.FacId = facEntity.FacId;
             model.FacGuid = facEntity.FacGuid;
+            model.FacFechaEmision = facEntity.FacFechaEmision;
+            model.FacEstado = facEntity.FacEstado;
 
             // Crea datos de facturación en la misma transacción
             if (model.DatosFacturacion is not null)
@@ -82,5 +84,11 @@ namespace Microservicio.Atracciones.DataManagement.Services
 
         public async Task<bool> ExisteNumeroFacturaAsync(string numero)
             => await _queryRepo.ObtenerPorNumeroAsync(numero) is not null;
+
+        public async Task<string> GenerarNumeroSecuencialAsync(int anio)
+        {
+            var maxSecuencial = await _queryRepo.ObtenerMaxSecuencialPorAnioAsync(anio);
+            return $"FAC-{anio}-{maxSecuencial + 1:000000}";
+        }
     }
 }

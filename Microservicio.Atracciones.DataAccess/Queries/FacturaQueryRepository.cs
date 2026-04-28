@@ -96,5 +96,27 @@ namespace Microservicio.Atracciones.DataAccess.Queries
             => await _context.Facturas
                 .AsNoTracking()
                 .FirstOrDefaultAsync(f => f.FacNumero == numero && f.FacEstado == 'A');
+
+        public async Task<int> ObtenerMaxSecuencialPorAnioAsync(int anio)
+        {
+            var prefijo = $"FAC-{anio}-";
+            var numeros = await _context.Facturas
+                .AsNoTracking()
+                .Where(f => f.FacNumero.StartsWith(prefijo))
+                .Select(f => f.FacNumero)
+                .ToListAsync();
+
+            return numeros
+                .Select(numero =>
+                {
+                    var secuencial = numero.Length > prefijo.Length
+                        ? numero[prefijo.Length..]
+                        : string.Empty;
+
+                    return int.TryParse(secuencial, out var valor) ? valor : 0;
+                })
+                .DefaultIfEmpty(0)
+                .Max();
+        }
     }
 }

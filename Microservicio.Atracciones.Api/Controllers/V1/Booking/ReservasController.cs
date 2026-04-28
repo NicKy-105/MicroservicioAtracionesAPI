@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Microservicio.Atracciones.Business.DTOs.Admin.Facturas;
 using Microservicio.Atracciones.Business.DTOs.Public.Reservas;
 using Microservicio.Atracciones.Business.Interfaces.Public;
 using Microsoft.AspNetCore.Authorization;
@@ -73,6 +74,21 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
             var reserva = await _service.CrearAsync(request, UsuGuidOpcional, UsuarioAccion, IpActual);
             var response = ReservasApiMapper.ToResponse(reserva, statusCode: 201);
             return StatusCode(201, response);
+        }
+
+        [HttpPost("{guid:guid}/confirmar-pago")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ApiItemResponse<FacturaResponse>), 201)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 400)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> ConfirmarPago(Guid guid, [FromBody] ConfirmarPagoReservaRequest request)
+        {
+            var factura = await _service.ConfirmarPagoAsync(guid, request, UsuarioAccion, IpActual);
+            return StatusCode(201, new ApiItemResponse<FacturaResponse>(
+                factura,
+                201,
+                "Pago confirmado y factura generada"));
         }
 
         // ----------------------------------------------------------------

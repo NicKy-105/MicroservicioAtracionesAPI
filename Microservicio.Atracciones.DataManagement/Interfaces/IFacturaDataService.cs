@@ -16,5 +16,6 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task CrearAsync(FacturaDataModel model);
         Task InhabilitarAsync(int facId, string motivo, string usuarioAccion, string ip);
         Task<bool> ExisteNumeroFacturaAsync(string numero);
+        Task<string> GenerarNumeroSecuencialAsync(int anio);
     }
 }
