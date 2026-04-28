@@ -31,10 +31,31 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
                 RevUsuarioCancelacion = entity.RevUsuarioCancelacion,
                 RevIpCancelacion = entity.RevIpCancelacion,
                 RevMotivoCancelacion = entity.RevMotivoCancelacion,
+                ClienteNombre = ResolverClienteNombre(entity),
+                AtraccionNombre = entity.Horario?.Ticket?.Atraccion?.AtNombre ?? string.Empty,
+                HorFecha = entity.Horario?.HorFecha,
+                HorHoraInicio = entity.Horario?.HorHoraInicio,
                 Detalle = entity.ReservasDetalle
                                              .Select(d => ToDetalleDataModel(d))
                                              .ToList()
             };
+        }
+
+        private static string ResolverClienteNombre(ReservaEntity entity)
+        {
+            var cliente = entity.Cliente;
+            if (cliente is null) return string.Empty;
+
+            if (!string.IsNullOrWhiteSpace(cliente.CliRazonSocial))
+                return cliente.CliRazonSocial;
+
+            var nombreCompleto = string.Join(" ", new[] { cliente.CliNombres, cliente.CliApellidos }
+                .Where(x => !string.IsNullOrWhiteSpace(x)));
+
+            if (!string.IsNullOrWhiteSpace(nombreCompleto))
+                return nombreCompleto;
+
+            return cliente.CliCorreo;
         }
 
         public static ReservaDetalleDataModel ToDetalleDataModel(ReservaDetalleEntity entity)

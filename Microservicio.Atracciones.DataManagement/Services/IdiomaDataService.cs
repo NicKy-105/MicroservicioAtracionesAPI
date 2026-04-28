@@ -40,6 +40,15 @@ namespace Microservicio.Atracciones.DataManagement.Services
                 }).ToListAsync();
         }
 
+        public async Task<bool> ExisteDescripcionAsync(string descripcion, int? excluirId = null)
+        {
+            var normalizada = descripcion.Trim().ToUpper();
+            return await _context.Idiomas.AsNoTracking()
+                .AnyAsync(i =>
+                    i.IdDescripcion.ToUpper() == normalizada &&
+                    (!excluirId.HasValue || i.IdId != excluirId.Value));
+        }
+
         public async Task CrearAsync(IdiomaDataModel model, string usuarioAccion, string ip)
         {
             var entity = new IdiomaEntity

@@ -33,6 +33,11 @@ namespace Microservicio.Atracciones.DataManagement.Models.Reservas
         public string? RevIpCancelacion { get; set; }
         public string? RevMotivoCancelacion { get; set; }
 
+        public string ClienteNombre { get; set; } = string.Empty;
+        public string AtraccionNombre { get; set; } = string.Empty;
+        public DateOnly? HorFecha { get; set; }
+        public TimeOnly? HorHoraInicio { get; set; }
+
         // Líneas de detalle
         public IReadOnlyList<ReservaDetalleDataModel> Detalle { get; set; } = new List<ReservaDetalleDataModel>();
     }

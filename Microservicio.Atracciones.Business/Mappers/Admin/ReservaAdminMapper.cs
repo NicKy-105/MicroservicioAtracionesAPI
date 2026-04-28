@@ -1,5 +1,6 @@
-﻿using Microservicio.Atracciones.Business.DTOs.Admin.Reservas;
+using Microservicio.Atracciones.Business.DTOs.Admin.Reservas;
 using Microservicio.Atracciones.DataManagement.Models.Reservas;
+using System.Globalization;
 
 namespace Microservicio.Atracciones.Business.Mappers.Admin
 {
@@ -10,10 +11,10 @@ namespace Microservicio.Atracciones.Business.Mappers.Admin
             {
                 RevGuid = model.RevGuid.ToString(),
                 RevCodigo = model.RevCodigo,
-                ClienteNombre = clienteNombre,
-                AtraccionNombre = atraccionNombre,
-                HorFecha = string.Empty,   // se completa en el service con el horario
-                HorHoraInicio = string.Empty,
+                ClienteNombre = string.IsNullOrWhiteSpace(clienteNombre) ? model.ClienteNombre : clienteNombre,
+                AtraccionNombre = string.IsNullOrWhiteSpace(atraccionNombre) ? model.AtraccionNombre : atraccionNombre,
+                HorFecha = model.HorFecha?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? string.Empty,
+                HorHoraInicio = model.HorHoraInicio?.ToString("HH:mm:ss", CultureInfo.InvariantCulture) ?? string.Empty,
                 RevTotal = model.RevTotal,
                 RevEstado = model.RevEstado,
                 FechaReserva = model.RevFechaReservaUtc,

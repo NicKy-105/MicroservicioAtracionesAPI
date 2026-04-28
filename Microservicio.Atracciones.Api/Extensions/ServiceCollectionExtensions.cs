@@ -79,6 +79,7 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();
             services.AddScoped<IClienteAdminService, ClienteAdminService>();
             services.AddScoped<IDestinoAdminService, DestinoAdminService>();
+            services.AddScoped<ICatalogoAdminService, CatalogoAdminService>();
             services.AddScoped<IAtraccionAdminService, AtraccionAdminService>();
             services.AddScoped<ITicketAdminService, TicketAdminService>();
             services.AddScoped<IReservaAdminService, ReservaAdminService>();
