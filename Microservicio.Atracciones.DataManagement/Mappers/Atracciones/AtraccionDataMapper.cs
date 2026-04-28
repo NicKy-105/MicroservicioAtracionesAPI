@@ -39,6 +39,7 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Atracciones
                 AtIpEliminacion = entity.AtIpEliminacion,
 
                 // Destino desnormalizado
+                DesGuid = entity.Destino?.DesGuid ?? Guid.Empty,
                 DesNombre = entity.Destino?.DesNombre ?? string.Empty,
                 DesPais = entity.Destino?.DesPais ?? string.Empty,
 

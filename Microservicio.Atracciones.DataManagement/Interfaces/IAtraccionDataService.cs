@@ -22,6 +22,14 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
             string usuarioAccion,
             string ip);
         Task ActualizarAsync(AtraccionDataModel model);
+        Task ActualizarConRelacionesAsync(
+            AtraccionDataModel model,
+            IEnumerable<Guid>? categoriaGuids,
+            IEnumerable<Guid>? idiomaGuids,
+            IEnumerable<Guid>? imagenGuids,
+            IEnumerable<Guid>? incluyeGuids,
+            string usuarioAccion,
+            string ip);
         Task EliminarLogicoAsync(int atId, string usuarioAccion, string ip);
 
         // E-03: categorías raíz con hijos para los filtros — consulta eficiente en BD

@@ -32,6 +32,7 @@ namespace Microservicio.Atracciones.DataManagement.Models.Atracciones
         public string? AtIpEliminacion { get; set; }
 
         // Destino (desnormalizado para evitar joins en Business)
+        public Guid DesGuid { get; set; }
         public string DesNombre { get; set; } = string.Empty;
         public string DesPais { get; set; } = string.Empty;
 

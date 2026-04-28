@@ -56,6 +56,16 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
             return Ok(new ApiItemResponse<AtraccionAdminResponse>(atraccion));
         }
 
+        [HttpPatch("{guid:guid}")]
+        [ProducesResponseType(typeof(ApiItemResponse<AtraccionAdminResponse>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 400)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ActualizarParcial(Guid guid, [FromBody] ActualizarAtraccionRequest request)
+        {
+            var atraccion = await _service.ActualizarAsync(guid, request, UsuarioAccion, IpActual);
+            return Ok(new ApiItemResponse<AtraccionAdminResponse>(atraccion));
+        }
+
         [HttpDelete("{guid:guid}")]
         [ProducesResponseType(204)]
         [ProducesResponseType(typeof(ApiErrorResponse), 404)]

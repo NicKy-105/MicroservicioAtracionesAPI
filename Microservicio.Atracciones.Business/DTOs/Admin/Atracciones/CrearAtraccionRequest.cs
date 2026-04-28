@@ -7,7 +7,7 @@ namespace Microservicio.Atracciones.Business.DTOs.Admin.Atracciones
 {
     public class CrearAtraccionRequest
     {
-        [Required] public Guid DesGuid { get; set; }
+        [Required] public Guid DestinoGuid { get; set; }
         [MaxLength(30)] public string? NumEstablecimiento { get; set; }
 
         [Required][MaxLength(200)] public string Nombre { get; set; } = string.Empty;
@@ -19,13 +19,21 @@ namespace Microservicio.Atracciones.Business.DTOs.Admin.Atracciones
 
         [Range(0, double.MaxValue)] public decimal? PrecioReferencia { get; set; }
 
-        public bool IncluyeAcompaniante { get; set; }
-        public bool IncluyeTransporte { get; set; }
-
         // GUIDs de las relaciones N:M a crear junto con la atracción
+        [Required]
+        [MinLength(1)]
         public IList<Guid> CategoriaGuids { get; set; } = new List<Guid>();
+
+        [Required]
+        [MinLength(1)]
         public IList<Guid> IdiomaGuids { get; set; } = new List<Guid>();
+
+        [Required]
+        [MinLength(1)]
         public IList<Guid> ImagenGuids { get; set; } = new List<Guid>();
+
+        [Required]
+        [MinLength(1)]
         public IList<Guid> IncluyeGuids { get; set; } = new List<Guid>();
     }
 }

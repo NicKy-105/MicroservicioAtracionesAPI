@@ -210,6 +210,129 @@ namespace Microservicio.Atracciones.DataManagement.Services
             await _uow.SaveChangesAsync();
         }
 
+        public async Task ActualizarConRelacionesAsync(
+            AtraccionDataModel model,
+            IEnumerable<Guid>? categoriaGuids,
+            IEnumerable<Guid>? idiomaGuids,
+            IEnumerable<Guid>? imagenGuids,
+            IEnumerable<Guid>? incluyeGuids,
+            string usuarioAccion,
+            string ip)
+        {
+            var catGuids = categoriaGuids?.Where(g => g != Guid.Empty).Distinct().ToList();
+            var idGuids = idiomaGuids?.Where(g => g != Guid.Empty).Distinct().ToList();
+            var imgGuids = imagenGuids?.Where(g => g != Guid.Empty).Distinct().ToList();
+            var incGuids = incluyeGuids?.Where(g => g != Guid.Empty).Distinct().ToList();
+
+            var categorias = catGuids is null ? null : await _context.Categorias
+                .Where(c => c.CatEstado == 'A' && catGuids.Contains(c.CatGuid))
+                .ToDictionaryAsync(c => c.CatGuid, c => c.CatId);
+            var idiomas = idGuids is null ? null : await _context.Idiomas
+                .Where(i => i.IdEstado == 'A' && idGuids.Contains(i.IdGuid))
+                .ToDictionaryAsync(i => i.IdGuid, i => i.IdId);
+            var imagenes = imgGuids is null ? null : await _context.Imagenes
+                .Where(i => i.ImgEstado == 'A' && imgGuids.Contains(i.ImgGuid))
+                .ToDictionaryAsync(i => i.ImgGuid, i => i.ImgId);
+            var incluyes = incGuids is null ? null : await _context.Incluyes
+                .Where(i => i.IncEstado == 'A' && incGuids.Contains(i.IncGuid))
+                .ToDictionaryAsync(i => i.IncGuid, i => i.IncId);
+
+            if (catGuids is not null) ValidarGuids("Categorías", catGuids, categorias!.Keys);
+            if (idGuids is not null) ValidarGuids("Idiomas", idGuids, idiomas!.Keys);
+            if (imgGuids is not null) ValidarGuids("Imágenes", imgGuids, imagenes!.Keys);
+            if (incGuids is not null) ValidarGuids("Incluye", incGuids, incluyes!.Keys);
+
+            await using var transaction = await _uow.BeginTransactionAsync();
+            try
+            {
+                var entity = await _context.Atracciones.FirstOrDefaultAsync(a => a.AtId == model.AtId && a.AtEstado == 'A')
+                    ?? throw new InvalidOperationException($"Atraccion {model.AtId} no encontrada.");
+
+                AtraccionDataMapper.ApplyToEntity(model, entity);
+
+                if (categorias is not null)
+                    await ReemplazarCategoriasAsync(entity.AtId, categorias.Values, usuarioAccion);
+                if (idiomas is not null)
+                    await ReemplazarIdiomasAsync(entity.AtId, idiomas.Values, usuarioAccion);
+                if (imagenes is not null)
+                    await ReemplazarImagenesAsync(entity.AtId, imagenes.Values, usuarioAccion);
+                if (incluyes is not null)
+                    await ReemplazarIncluyesAsync(entity.AtId, incluyes.Values, usuarioAccion);
+
+                await _uow.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        private async Task ReemplazarCategoriasAsync(int atId, IEnumerable<int> catIds, string usuarioAccion)
+        {
+            var actuales = await _context.CategoriasAtracciones.Where(x => x.AtId == atId).ToListAsync();
+            _context.CategoriasAtracciones.RemoveRange(actuales);
+
+            foreach (var catId in catIds)
+                await _context.CategoriasAtracciones.AddAsync(new CategoriaAtraccionEntity
+                {
+                    AtId = atId,
+                    CatId = catId,
+                    CaEstado = 'A',
+                    CaFechaIngreso = DateTime.UtcNow,
+                    CaUsuarioIngreso = usuarioAccion
+                });
+        }
+
+        private async Task ReemplazarIdiomasAsync(int atId, IEnumerable<int> idIds, string usuarioAccion)
+        {
+            var actuales = await _context.IdiomasAtracciones.Where(x => x.AtId == atId).ToListAsync();
+            _context.IdiomasAtracciones.RemoveRange(actuales);
+
+            foreach (var idId in idIds)
+                await _context.IdiomasAtracciones.AddAsync(new IdiomaAtraccionEntity
+                {
+                    AtId = atId,
+                    IdId = idId,
+                    IaEstado = 'A',
+                    IaFechaIngreso = DateTime.UtcNow,
+                    IaUsuarioIngreso = usuarioAccion
+                });
+        }
+
+        private async Task ReemplazarImagenesAsync(int atId, IEnumerable<int> imgIds, string usuarioAccion)
+        {
+            var actuales = await _context.ImagenesAtracciones.Where(x => x.AtId == atId).ToListAsync();
+            _context.ImagenesAtracciones.RemoveRange(actuales);
+
+            foreach (var imgId in imgIds)
+                await _context.ImagenesAtracciones.AddAsync(new ImagenAtraccionEntity
+                {
+                    AtId = atId,
+                    ImgId = imgId,
+                    ImaEstado = 'A',
+                    ImaFechaIngreso = DateTime.UtcNow,
+                    ImaUsuarioIngreso = usuarioAccion
+                });
+        }
+
+        private async Task ReemplazarIncluyesAsync(int atId, IEnumerable<int> incIds, string usuarioAccion)
+        {
+            var actuales = await _context.AtraccionesIncluyen.Where(x => x.AtId == atId).ToListAsync();
+            _context.AtraccionesIncluyen.RemoveRange(actuales);
+
+            foreach (var incId in incIds)
+                await _context.AtraccionesIncluyen.AddAsync(new AtraccionIncluyeEntity
+                {
+                    AtId = atId,
+                    IncId = incId,
+                    AiEstado = 'A',
+                    AiFechaIngreso = DateTime.UtcNow,
+                    AiUsuarioIngreso = usuarioAccion
+                });
+        }
+
         public async Task EliminarLogicoAsync(int atId, string usuarioAccion, string ip)
         {
             var entity = await _uow.Atracciones.ObtenerPorIdAsync(atId)
