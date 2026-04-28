@@ -36,6 +36,7 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Clientes
 
         public static void ApplyToEntity(ClienteDataModel model, ClienteEntity entity)
         {
+            entity.UsuId = model.UsuId;
             entity.CliTipoIdentificacion = model.CliTipoIdentificacion;
             entity.CliNumeroIdentificacion = model.CliNumeroIdentificacion;
             entity.CliNombres = model.CliNombres;

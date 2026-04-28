@@ -33,6 +33,7 @@ namespace Microservicio.Atracciones.DataAccess.Repositories
 
         public async Task<ClienteEntity?> ObtenerPorNumeroIdentificacionAsync(string numeroIdentificacion)
             => await _context.Clientes
+                .Include(x => x.Usuario)
                 .FirstOrDefaultAsync(x => x.CliNumeroIdentificacion == numeroIdentificacion && x.CliEstado == 'A');
 
         public async Task<IReadOnlyList<ClienteEntity>> ListarAsync()

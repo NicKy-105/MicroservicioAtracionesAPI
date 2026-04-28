@@ -10,7 +10,7 @@ namespace Microservicio.Atracciones.DataAccess.Entities.Clientes
     {
         public int CliId { get; set; }
         public Guid CliGuid { get; set; }
-        public int UsuId { get; set; }
+        public int? UsuId { get; set; }
 
         // Datos de identificación
         public string CliTipoIdentificacion { get; set; } = string.Empty;   // CC | RUC | PASAPORTE | CEDULA | OTRO
@@ -44,7 +44,7 @@ namespace Microservicio.Atracciones.DataAccess.Entities.Clientes
         // ----------------------------------------------------------------
         //  Navegación
         // ----------------------------------------------------------------
-        public UsuarioEntity Usuario { get; set; } = null!;
+        public UsuarioEntity? Usuario { get; set; }
         public ICollection<ReservaEntity> Reservas { get; set; } = new List<ReservaEntity>();
     }
 }

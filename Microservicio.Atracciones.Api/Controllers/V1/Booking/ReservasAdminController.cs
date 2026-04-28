@@ -55,5 +55,34 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
             await _service.ActualizarEstadoAsync(guid, request, UsuarioAccion, IpActual);
             return NoContent();
         }
+
+        [HttpPut("{guid:guid}/cancelar")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> Cancelar(Guid guid, [FromBody] ActualizarEstadoReservaRequest request)
+        {
+            request.NuevoEstado = 'C';
+            await _service.ActualizarEstadoAsync(guid, request, UsuarioAccion, IpActual);
+            return NoContent();
+        }
+
+        [HttpDelete("{guid:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> Anular(Guid guid, [FromBody] ActualizarEstadoReservaRequest? request)
+        {
+            await _service.ActualizarEstadoAsync(
+                guid,
+                new ActualizarEstadoReservaRequest
+                {
+                    NuevoEstado = 'I',
+                    Motivo = request?.Motivo ?? "Anulada desde administración."
+                },
+                UsuarioAccion,
+                IpActual);
+            return NoContent();
+        }
     }
 }

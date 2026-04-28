@@ -16,68 +16,98 @@ namespace Microservicio.Atracciones.Business.Services.Admin
         private readonly IClienteDataService _clienteService;
         private readonly IUsuarioDataService _usuarioService;
         private readonly IPasswordHasher _passwordHasher;
+        private readonly IUnitOfWork _unitOfWork;
 
         public ClienteAdminService(
             IClienteDataService clienteService,
             IUsuarioDataService usuarioService,
-            IPasswordHasher passwordHasher)
+            IPasswordHasher passwordHasher,
+            IUnitOfWork unitOfWork)
         {
             _clienteService = clienteService;
             _usuarioService = usuarioService;
             _passwordHasher = passwordHasher;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<ClienteResponse> CrearAsync(CrearClienteRequest request, string usuarioAccion, string ip)
         {
             ClienteAdminValidator.ValidarCrear(request);
 
-            if (await _clienteService.ExisteIdentificacionAsync(request.NumeroIdentificacion))
-                throw new ConflictException($"Ya existe un cliente con la identificación '{request.NumeroIdentificacion}'.");
-
             if (await _usuarioService.ExisteLoginAsync(request.Login))
                 throw new ConflictException($"El login '{request.Login}' ya está en uso.");
 
-            // 1. Crear usuario de acceso
-            var usuarioModel = new UsuarioDataModel
-            {
-                UsuLogin = request.Login,
-                UsuPasswordHash = _passwordHasher.Hashear(request.Password),
-                UsuEstado = 'A',
-                UsuUsuarioRegistro = usuarioAccion,
-                UsuIpRegistro = ip,
-                Roles = new List<RolDataModel>
-                {
-                    new() { RolDescripcion = "CLIENTE" }
-                }
-            };
+            var clienteExistente = await _clienteService.ObtenerPorNumeroIdentificacionAsync(request.NumeroIdentificacion);
+            if (clienteExistente is not null && clienteExistente.UsuId.HasValue)
+                throw new ConflictException($"Ya existe un cliente con la identificación '{request.NumeroIdentificacion}' vinculado a una cuenta.");
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
             try
             {
-                await _usuarioService.CrearAsync(usuarioModel);
-            }
-            catch (InvalidOperationException ex) when (ex.Message.StartsWith("Roles no encontrados"))
-            {
-                throw new ConflictException(ex.Message);
-            }
+                // 1. Crear usuario de acceso
+                var usuarioModel = new UsuarioDataModel
+                {
+                    UsuLogin = request.Login,
+                    UsuPasswordHash = _passwordHasher.Hashear(request.Password),
+                    UsuEstado = 'A',
+                    UsuUsuarioRegistro = usuarioAccion,
+                    UsuIpRegistro = ip,
+                    Roles = new List<RolDataModel>
+                    {
+                        new() { RolDescripcion = "CLIENTE" }
+                    }
+                };
+                try
+                {
+                    await _usuarioService.CrearAsync(usuarioModel);
+                }
+                catch (InvalidOperationException ex) when (ex.Message.StartsWith("Roles no encontrados"))
+                {
+                    throw new ConflictException(ex.Message);
+                }
 
-            // 2. Crear cliente vinculado al usuario
-            var clienteModel = new ClienteDataModel
-            {
-                UsuId = usuarioModel.UsuId,
-                CliTipoIdentificacion = request.TipoIdentificacion,
-                CliNumeroIdentificacion = request.NumeroIdentificacion,
-                CliNombres = request.Nombres,
-                CliApellidos = request.Apellidos,
-                CliRazonSocial = request.RazonSocial,
-                CliCorreo = request.Correo,
-                CliTelefono = request.Telefono,
-                CliDireccion = request.Direccion,
-                CliEstado = 'A',
-                CliUsuarioIngreso = usuarioAccion,
-                CliIpIngreso = ip
-            };
-            await _clienteService.CrearAsync(clienteModel);
+                if (clienteExistente is not null)
+                {
+                    clienteExistente.UsuId = usuarioModel.UsuId;
+                    clienteExistente.CliTipoIdentificacion = request.TipoIdentificacion;
+                    clienteExistente.CliNombres = request.Nombres;
+                    clienteExistente.CliApellidos = request.Apellidos;
+                    clienteExistente.CliRazonSocial = request.RazonSocial;
+                    clienteExistente.CliCorreo = request.Correo;
+                    clienteExistente.CliTelefono = request.Telefono;
+                    clienteExistente.CliDireccion = request.Direccion;
 
-            return ClienteAdminMapper.ToResponse(clienteModel);
+                    await _clienteService.ActualizarAsync(clienteExistente);
+                    await transaction.CommitAsync();
+                    return ClienteAdminMapper.ToResponse(clienteExistente);
+                }
+
+                // 2. Crear cliente vinculado al usuario
+                var clienteModel = new ClienteDataModel
+                {
+                    UsuId = usuarioModel.UsuId,
+                    CliTipoIdentificacion = request.TipoIdentificacion,
+                    CliNumeroIdentificacion = request.NumeroIdentificacion,
+                    CliNombres = request.Nombres,
+                    CliApellidos = request.Apellidos,
+                    CliRazonSocial = request.RazonSocial,
+                    CliCorreo = request.Correo,
+                    CliTelefono = request.Telefono,
+                    CliDireccion = request.Direccion,
+                    CliEstado = 'A',
+                    CliUsuarioIngreso = usuarioAccion,
+                    CliIpIngreso = ip
+                };
+                await _clienteService.CrearAsync(clienteModel);
+
+                await transaction.CommitAsync();
+                return ClienteAdminMapper.ToResponse(clienteModel);
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<ClienteResponse> ActualizarAsync(Guid cliGuid, ActualizarClienteRequest request, string usuarioAccion, string ip)

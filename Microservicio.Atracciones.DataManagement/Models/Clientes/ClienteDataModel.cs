@@ -9,7 +9,7 @@ public class ClienteDataModel
 {
     public int CliId { get; set; }
     public Guid CliGuid { get; set; }
-    public int UsuId { get; set; }
+    public int? UsuId { get; set; }
 
     // Identificación
     public string CliTipoIdentificacion { get; set; } = string.Empty;

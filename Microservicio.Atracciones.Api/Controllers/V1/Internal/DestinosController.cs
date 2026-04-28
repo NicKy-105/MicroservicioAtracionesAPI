@@ -52,5 +52,14 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Internal
             var destino = await _service.ActualizarAsync(guid, request, UsuarioAccion, IpActual);
             return Ok(new ApiItemResponse<DestinoResponse>(destino));
         }
+
+        [HttpDelete("{guid:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> Eliminar(Guid guid)
+        {
+            await _service.EliminarAsync(guid, UsuarioAccion, IpActual);
+            return NoContent();
+        }
     }
 }

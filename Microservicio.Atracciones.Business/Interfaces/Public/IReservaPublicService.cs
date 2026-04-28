@@ -5,7 +5,7 @@ namespace Microservicio.Atracciones.Business.Interfaces.Public
 {
     public interface IReservaPublicService
     {
-        Task<ReservaResponse> CrearAsync(CrearReservaRequest request, Guid usuGuid, string usuarioAccion, string ip);
+        Task<ReservaResponse> CrearAsync(CrearReservaRequest request, Guid? usuGuid, string usuarioAccion, string ip);
         Task<ReservaResponse> ObtenerPorGuidAsync(Guid revGuid, Guid usuGuid);
         Task<DataPagedResult<ReservaResponse>> ListarPorClienteAsync(Guid usuGuid, int page, int limit);
     }

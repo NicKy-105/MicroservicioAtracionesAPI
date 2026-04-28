@@ -20,7 +20,7 @@ namespace Microservicio.Atracciones.DataAccess.Configurations
                 .HasDefaultValueSql("gen_random_uuid()")
                 .IsRequired();
 
-            builder.Property(x => x.UsuId).HasColumnName("usu_id").IsRequired();
+            builder.Property(x => x.UsuId).HasColumnName("usu_id").IsRequired(false);
 
             builder.Property(x => x.CliTipoIdentificacion)
                 .HasColumnName("cli_tipo_identificacion")
