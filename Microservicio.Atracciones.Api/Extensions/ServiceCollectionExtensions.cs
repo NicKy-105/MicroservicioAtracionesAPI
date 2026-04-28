@@ -54,6 +54,7 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<ICategoriaDataService, CategoriaDataService>();
             services.AddScoped<IIdiomaDataService, IdiomaDataService>();
             services.AddScoped<IIncluyeDataService, IncluyeDataService>();
+            services.AddScoped<IImagenDataService, ImagenDataService>();
 
             // ── Business — Infraestructura (viven en API) ──────────────
             services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();
@@ -74,6 +75,7 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<IReservaPublicService, ReservaPublicService>();
             services.AddScoped<IReseniaPublicService, ReseniaPublicService>();
             services.AddScoped<IClientePerfilService, ClientePerfilService>();
+            services.AddScoped<IFacturaPublicService, FacturaPublicService>();
 
             // ── Business — Admin Services ──────────────────────────────
             services.AddScoped<IUsuarioAdminService, UsuarioAdminService>();
@@ -85,6 +87,7 @@ namespace Microservicio.Atracciones.Api.Extensions
             services.AddScoped<IReservaAdminService, ReservaAdminService>();
             services.AddScoped<IFacturaAdminService, FacturaAdminService>();
             services.AddScoped<IReseniaAdminService, ReseniaAdminService>();
+            services.AddScoped<IImagenAdminService, ImagenAdminService>();
 
             // ── API — Token Service ────────────────────────────────────
             services.AddScoped<TokenService, JwtTokenService>();

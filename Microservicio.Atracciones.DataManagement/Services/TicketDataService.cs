@@ -124,6 +124,26 @@ namespace Microservicio.Atracciones.DataManagement.Services
             await _uow.SaveChangesAsync();
         }
 
+        public async Task EliminarHorarioLogicoAsync(int horId, string usuarioAccion, string ip)
+        {
+            var entity = await _uow.Tickets.ObtenerHorarioPorIdAsync(horId)
+                ?? throw new InvalidOperationException($"Horario {horId} no encontrado.");
+
+            entity.HorEstado = 'I';
+            entity.HorFechaEliminacion = DateTime.UtcNow;
+            entity.HorUsuarioEliminacion = usuarioAccion;
+            entity.HorIpEliminacion = ip;
+
+            _uow.Tickets.ActualizarHorario(entity);
+            await _uow.SaveChangesAsync();
+        }
+
+        public Task<bool> TieneReservasActivasPorTicketAsync(int tckId)
+            => _queryRepo.TieneReservasActivasPorTicketAsync(tckId);
+
+        public Task<bool> TieneReservasActivasPorHorarioAsync(int horId)
+            => _queryRepo.TieneReservasActivasPorHorarioAsync(horId);
+
         public Task<(bool DisponibleHoy, DateOnly? ProximaFecha, int? CuposProximos)>
             ObtenerDisponibilidadAsync(int atId)
             => _queryRepo.ObtenerDisponibilidadAsync(atId);

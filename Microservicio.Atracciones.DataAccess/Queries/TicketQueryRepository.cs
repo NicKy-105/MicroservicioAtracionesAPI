@@ -140,5 +140,15 @@ namespace Microservicio.Atracciones.DataAccess.Queries
                 .AsNoTracking()
                 .Where(x => x.AtId == atId && x.TckEstado == 'A')
                 .MinAsync(x => (decimal?)x.TckPrecio);
+
+        public async Task<bool> TieneReservasActivasPorTicketAsync(int tckId)
+            => await _context.ReservasDetalle
+                .AsNoTracking()
+                .AnyAsync(d => d.TckId == tckId && d.RdetEstado == 'A' && d.Reserva.RevEstado == 'A');
+
+        public async Task<bool> TieneReservasActivasPorHorarioAsync(int horId)
+            => await _context.Reservas
+                .AsNoTracking()
+                .AnyAsync(r => r.HorId == horId && r.RevEstado == 'A');
     }
 }

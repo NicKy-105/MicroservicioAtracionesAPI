@@ -15,5 +15,7 @@ namespace Microservicio.Atracciones.Business.Interfaces.Admin
         Task<IReadOnlyList<HorarioResponse>> ListarHorariosPorTicketAsync(Guid tckGuid);
         Task<IReadOnlyList<HorarioResponse>> ListarHorariosPorAtraccionAsync(Guid atGuid);
         Task<HorarioResponse> CrearHorarioAsync(CrearHorarioRequest request, string usuarioAccion, string ip);
+        Task<HorarioResponse> ActualizarHorarioAsync(Guid horGuid, ActualizarHorarioRequest request, string usuarioAccion, string ip);
+        Task EliminarHorarioAsync(Guid horGuid, string usuarioAccion, string ip);
     }
 }

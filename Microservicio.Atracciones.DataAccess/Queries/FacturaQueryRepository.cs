@@ -44,6 +44,24 @@ namespace Microservicio.Atracciones.DataAccess.Queries
             return new PagedResult<FacturaEntity>(items, total, total, page, limit);
         }
 
+        public async Task<PagedResult<FacturaEntity>> ListarPorClienteAsync(int cliId, int page, int limit)
+        {
+            var query = _context.Facturas
+                .AsNoTracking()
+                .Include(x => x.Reserva)
+                .Include(x => x.DatosFacturacion)
+                .Where(x => x.Reserva.CliId == cliId && x.FacEstado == 'A');
+
+            var total = await query.CountAsync();
+            var items = await query
+                .OrderByDescending(x => x.FacFechaEmision)
+                .Skip((page - 1) * limit)
+                .Take(limit)
+                .ToListAsync();
+
+            return new PagedResult<FacturaEntity>(items, total, total, page, limit);
+        }
+
         // ----------------------------------------------------------------
         //  Factura completa con datos del receptor
         // ----------------------------------------------------------------

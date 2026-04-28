@@ -91,6 +91,10 @@ namespace Microservicio.Atracciones.Business.Services.Admin
         {
             var model = await _ticketService.ObtenerPorGuidAsync(tckGuid)
                 ?? throw new NotFoundException("Ticket", tckGuid);
+
+            if (await _ticketService.TieneReservasActivasPorTicketAsync(model.TckId))
+                throw new ConflictException("No se puede desactivar el ticket porque tiene reservas activas.");
+
             await _ticketService.EliminarLogicoAsync(model.TckId, usuarioAccion, ip);
         }
 
@@ -149,6 +153,53 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             
             var creado = await _ticketService.ObtenerHorarioPorGuidAsync(horario.HorGuid) ?? horario;
             return TicketAdminMapper.ToHorarioResponse(creado);
+        }
+
+        public async Task<HorarioResponse> ActualizarHorarioAsync(Guid horGuid, ActualizarHorarioRequest request, string usuarioAccion, string ip)
+        {
+            if (request.HoraInicio.HasValue && request.HoraFin.HasValue && request.HoraFin.Value <= request.HoraInicio.Value)
+                throw new ValidationException(new[] { "La hora de fin debe ser posterior a la hora de inicio." });
+
+            if (request.CuposDisponibles.HasValue && request.CuposDisponibles.Value < 0)
+                throw new ValidationException(new[] { "Los cupos disponibles no pueden ser negativos." });
+
+            var horario = await _ticketService.ObtenerHorarioPorGuidAsync(horGuid)
+                ?? throw new NotFoundException("Horario", horGuid);
+
+            var fecha = request.Fecha ?? horario.HorFecha;
+            var horaInicio = request.HoraInicio ?? horario.HorHoraInicio;
+            var horaFin = request.HoraFin ?? horario.HorHoraFin;
+
+            if (horaFin.HasValue && horaFin.Value <= horaInicio)
+                throw new ValidationException(new[] { "La hora de fin debe ser posterior a la hora de inicio." });
+
+            if (request.Estado == 'I' && await _ticketService.TieneReservasActivasPorHorarioAsync(horario.HorId))
+                throw new ConflictException("No se puede inactivar el horario porque tiene reservas activas.");
+
+            horario.HorFecha = fecha;
+            horario.HorHoraInicio = horaInicio;
+            horario.HorHoraFin = horaFin;
+            if (request.CuposDisponibles.HasValue)
+                horario.HorCuposDisponibles = request.CuposDisponibles.Value;
+            if (request.Estado.HasValue)
+                horario.HorEstado = request.Estado.Value;
+            horario.HorUsuarioMod = usuarioAccion;
+            horario.HorIpMod = ip;
+
+            await _ticketService.ActualizarHorarioAsync(horario);
+            var actualizado = await _ticketService.ObtenerHorarioPorGuidAsync(horGuid) ?? horario;
+            return TicketAdminMapper.ToHorarioResponse(actualizado);
+        }
+
+        public async Task EliminarHorarioAsync(Guid horGuid, string usuarioAccion, string ip)
+        {
+            var horario = await _ticketService.ObtenerHorarioPorGuidAsync(horGuid)
+                ?? throw new NotFoundException("Horario", horGuid);
+
+            if (await _ticketService.TieneReservasActivasPorHorarioAsync(horario.HorId))
+                throw new ConflictException("No se puede desactivar el horario porque tiene reservas activas.");
+
+            await _ticketService.EliminarHorarioLogicoAsync(horario.HorId, usuarioAccion, ip);
         }
     }
 }

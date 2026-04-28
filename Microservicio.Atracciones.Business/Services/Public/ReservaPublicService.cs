@@ -176,6 +176,48 @@ namespace Microservicio.Atracciones.Business.Services.Public
             return new DataPagedResult<ReservaResponse>(list, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
         }
 
+        public async Task CancelarAsync(Guid revGuid, CancelarReservaRequest request, Guid usuGuid, string usuarioAccion, string ip)
+        {
+            var cliId = await ObtenerCliIdAsync(usuGuid);
+            var reserva = await _reservaService.ObtenerPorGuidAsync(revGuid)
+                ?? throw new NotFoundException("Reserva", revGuid);
+
+            if (reserva.CliId != cliId)
+                throw new ForbiddenBusinessException("No puedes cancelar una reserva que no te pertenece.");
+
+            if (reserva.RevEstado == 'C')
+                throw new ConflictException("La reserva ya está cancelada.");
+
+            if (reserva.RevEstado != 'A')
+                throw new ConflictException("Solo se pueden cancelar reservas activas.");
+
+            var motivo = string.IsNullOrWhiteSpace(request.Motivo)
+                ? "Cancelada por el cliente."
+                : request.Motivo.Trim();
+
+            using var transaction = await _unitOfWork.BeginTransactionAsync();
+            try
+            {
+                await _reservaService.ActualizarEstadoAsync(reserva.RevId, 'C', motivo, usuarioAccion, ip);
+
+                var horario = await _ticketService.ObtenerHorarioPorIdAsync(reserva.HorId);
+                if (horario is not null)
+                {
+                    horario.HorCuposDisponibles += reserva.Detalle.Sum(d => d.RdetCantidad);
+                    horario.HorUsuarioMod = usuarioAccion;
+                    horario.HorIpMod = ip;
+                    await _ticketService.ActualizarHorarioAsync(horario);
+                }
+
+                await transaction.CommitAsync();
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
         private async Task<int> ObtenerCliIdAsync(Guid usuGuid)
         {
             var usuario = await _usuarioService.ObtenerPorGuidAsync(usuGuid)

@@ -92,5 +92,17 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
             return Ok(response);
         }
 
+        [HttpPut("{guid:guid}/cancelar")]
+        [Authorize(Policy = "ClienteAutenticado")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 403)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> Cancelar(Guid guid, [FromBody] CancelarReservaRequest request)
+        {
+            await _service.CancelarAsync(guid, request, UsuGuidActual, UsuarioAccion, IpActual);
+            return NoContent();
+        }
+
     }
 }

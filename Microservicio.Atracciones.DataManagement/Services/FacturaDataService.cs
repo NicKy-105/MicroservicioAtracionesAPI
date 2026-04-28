@@ -37,6 +37,13 @@ namespace Microservicio.Atracciones.DataManagement.Services
             return new DataPagedResult<FacturaDataModel>(items, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
         }
 
+        public async Task<DataPagedResult<FacturaDataModel>> ListarPorClienteAsync(int cliId, int page, int limit)
+        {
+            var paged = await _queryRepo.ListarPorClienteAsync(cliId, page, limit);
+            var items = paged.Items.Select(e => FacturaDataMapper.ToDataModel(e)!).ToList();
+            return new DataPagedResult<FacturaDataModel>(items, paged.TotalFiltrado, paged.TotalSinFiltros, paged.Page, paged.Limit);
+        }
+
         public async Task CrearAsync(FacturaDataModel model)
         {
             var facEntity = FacturaDataMapper.ToNewEntity(model);

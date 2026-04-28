@@ -8,5 +8,6 @@ namespace Microservicio.Atracciones.Business.Interfaces.Public
         Task<ReservaResponse> CrearAsync(CrearReservaRequest request, Guid? usuGuid, string usuarioAccion, string ip);
         Task<ReservaResponse> ObtenerPorGuidAsync(Guid revGuid, Guid usuGuid);
         Task<DataPagedResult<ReservaResponse>> ListarPorClienteAsync(Guid usuGuid, int page, int limit);
+        Task CancelarAsync(Guid revGuid, CancelarReservaRequest request, Guid usuGuid, string usuarioAccion, string ip);
     }
 }

@@ -23,6 +23,9 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task<IReadOnlyList<HorarioDataModel>> ListarHorariosPorAtraccionAsync(int atId, int diasAdelante = 7);
         Task CrearHorarioAsync(HorarioDataModel model);
         Task ActualizarHorarioAsync(HorarioDataModel model);
+        Task EliminarHorarioLogicoAsync(int horId, string usuarioAccion, string ip);
+        Task<bool> TieneReservasActivasPorTicketAsync(int tckId);
+        Task<bool> TieneReservasActivasPorHorarioAsync(int horId);
 
         // Disponibilidad en tiempo real
         Task<(bool DisponibleHoy, DateOnly? ProximaFecha, int? CuposProximos)>

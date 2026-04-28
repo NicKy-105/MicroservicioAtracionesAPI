@@ -72,6 +72,16 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
             return Ok(new ApiItemResponse<TicketResponse>(ticket));
         }
 
+        [HttpDelete("{guid:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> Eliminar(Guid guid)
+        {
+            await _service.EliminarTicketAsync(guid, UsuarioAccion, IpActual);
+            return NoContent();
+        }
+
         [HttpPost("horarios")]
         [ProducesResponseType(typeof(ApiItemResponse<HorarioResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
@@ -97,6 +107,27 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         {
             var horario = await _service.ObtenerHorarioPorGuidAsync(guid);
             return Ok(new ApiItemResponse<HorarioResponse>(horario));
+        }
+
+        [HttpPut("~/api/v1/admin/horarios/{guid:guid}")]
+        [ProducesResponseType(typeof(ApiItemResponse<HorarioResponse>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 400)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> ActualizarHorario(Guid guid, [FromBody] ActualizarHorarioRequest request)
+        {
+            var horario = await _service.ActualizarHorarioAsync(guid, request, UsuarioAccion, IpActual);
+            return Ok(new ApiItemResponse<HorarioResponse>(horario));
+        }
+
+        [HttpDelete("~/api/v1/admin/horarios/{guid:guid}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 409)]
+        public async Task<IActionResult> EliminarHorario(Guid guid)
+        {
+            await _service.EliminarHorarioAsync(guid, UsuarioAccion, IpActual);
+            return NoContent();
         }
 
         [HttpGet("{ticketGuid:guid}/horarios")]

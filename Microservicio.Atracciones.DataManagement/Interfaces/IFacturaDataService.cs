@@ -12,6 +12,7 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
         Task<FacturaDataModel?> ObtenerPorGuidAsync(Guid facGuid);
         Task<FacturaDataModel?> ObtenerPorReservaAsync(int revId);
         Task<DataPagedResult<FacturaDataModel>> ListarAdminAsync(int page, int limit, char? estado = null);
+        Task<DataPagedResult<FacturaDataModel>> ListarPorClienteAsync(int cliId, int page, int limit);
         Task CrearAsync(FacturaDataModel model);
         Task InhabilitarAsync(int facId, string motivo, string usuarioAccion, string ip);
         Task<bool> ExisteNumeroFacturaAsync(string numero);
