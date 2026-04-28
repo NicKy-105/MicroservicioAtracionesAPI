@@ -6,6 +6,8 @@ using Microservicio.Atracciones.Business.Validators.Public;
 using Microservicio.Atracciones.DataManagement.Interfaces;
 using Microservicio.Atracciones.DataManagement.Models.Atracciones;
 using Microservicio.Atracciones.DataManagement.Models.Common;
+using Microservicio.Atracciones.DataManagement.Models.Reservas;
+using System.Globalization;
 
 namespace Microservicio.Atracciones.Business.Services.Public
 {
@@ -195,6 +197,73 @@ namespace Microservicio.Atracciones.Business.Services.Public
             };
         }
 
+        public async Task<IReadOnlyList<TicketDisponibleResponse>> ListarTicketsAsync(Guid atGuid)
+        {
+            var atraccion = await _atraccionService.ObtenerPorGuidAsync(atGuid)
+                ?? throw new NotFoundException("Atraccion", atGuid);
+
+            var horarios = (await _ticketService.ListarHorariosPorAtraccionAsync(atraccion.AtId, 365))
+                .Where(EsHorarioDisponible)
+                .ToList();
+
+            return (await _ticketService.ListarPorAtraccionAsync(atraccion.AtId))
+                .Where(t => t.TckEstado == 'A')
+                .Select(t => ToTicketDisponibleResponse(t, horarios.Where(h => h.TckId == t.TckId)))
+                .ToList();
+        }
+
+        public async Task<IReadOnlyList<HorarioProximoResponse>> ListarHorariosPorTicketAsync(Guid tckGuid)
+        {
+            var ticket = await _ticketService.ObtenerPorGuidAsync(tckGuid)
+                ?? throw new NotFoundException("Ticket", tckGuid);
+
+            return (await _ticketService.ListarHorariosPorTicketAsync(ticket.TckId))
+                .Where(EsHorarioDisponible)
+                .Select(ToHorarioProximoResponse)
+                .ToList();
+        }
+
+        public async Task<IReadOnlyList<HorarioProximoResponse>> ListarHorariosDisponiblesAsync(Guid atGuid)
+        {
+            var atraccion = await _atraccionService.ObtenerPorGuidAsync(atGuid)
+                ?? throw new NotFoundException("Atraccion", atGuid);
+
+            return (await _ticketService.ListarHorariosPorAtraccionAsync(atraccion.AtId, 365))
+                .Where(EsHorarioDisponible)
+                .Select(ToHorarioProximoResponse)
+                .ToList();
+        }
+
+        private static TicketDisponibleResponse ToTicketDisponibleResponse(
+            TicketDataModel ticket,
+            IEnumerable<HorarioDataModel> horarios)
+            => new()
+            {
+                TckGuid = ticket.TckGuid.ToString(),
+                Titulo = ticket.TckTitulo,
+                Tipo = ticket.TckTipoParticipante,
+                Precio = ticket.TckPrecio,
+                CuposDisponibles = ticket.TckCuposDisponibles,
+                HorariosDisponibles = horarios.Select(ToHorarioProximoResponse).ToList()
+            };
+
+        private static HorarioProximoResponse ToHorarioProximoResponse(HorarioDataModel horario)
+            => new()
+            {
+                HorGuid = horario.HorGuid.ToString(),
+                TckGuid = horario.TckGuid == Guid.Empty ? string.Empty : horario.TckGuid.ToString(),
+                TicketTitulo = horario.TckTitulo,
+                Fecha = horario.HorFecha.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture),
+                HoraInicio = horario.HorHoraInicio.ToString("HH:mm", CultureInfo.InvariantCulture),
+                HoraFin = horario.HorHoraFin?.ToString("HH:mm", CultureInfo.InvariantCulture),
+                Cupos = horario.HorCuposDisponibles,
+                Disponible = EsHorarioDisponible(horario)
+            };
+
+        private static bool EsHorarioDisponible(HorarioDataModel horario)
+            => horario.HorEstado == 'A'
+               && horario.HorCuposDisponibles > 0
+               && horario.HorFecha >= DateOnly.FromDateTime(DateTime.UtcNow);
 
     }
 }

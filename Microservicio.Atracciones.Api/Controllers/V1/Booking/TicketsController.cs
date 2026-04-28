@@ -26,6 +26,32 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         private string UsuarioAccion => User.FindFirstValue("login") ?? "sistema";
         private string IpActual => HttpContext.Connection.RemoteIpAddress?.ToString() ?? "0.0.0.0";
 
+        [HttpGet]
+        [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<TicketResponse>>), 200)]
+        public async Task<IActionResult> Listar()
+        {
+            var tickets = await _service.ListarTicketsAsync();
+            return Ok(new ApiItemResponse<IReadOnlyList<TicketResponse>>(tickets));
+        }
+
+        [HttpGet("{guid:guid}")]
+        [ProducesResponseType(typeof(ApiItemResponse<TicketResponse>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ObtenerPorGuid(Guid guid)
+        {
+            var ticket = await _service.ObtenerTicketPorGuidAsync(guid);
+            return Ok(new ApiItemResponse<TicketResponse>(ticket));
+        }
+
+        [HttpGet("~/api/v1/admin/atracciones/{atraccionGuid:guid}/tickets")]
+        [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<TicketResponse>>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ListarPorAtraccion(Guid atraccionGuid)
+        {
+            var tickets = await _service.ListarTicketsPorAtraccionAsync(atraccionGuid);
+            return Ok(new ApiItemResponse<IReadOnlyList<TicketResponse>>(tickets));
+        }
+
         [HttpPost]
         [ProducesResponseType(typeof(ApiItemResponse<TicketResponse>), 201)]
         [ProducesResponseType(typeof(ApiErrorResponse), 400)]
@@ -54,6 +80,41 @@ namespace Microservicio.Atracciones.Api.Controllers.V1.Booking
         {
             var horario = await _service.CrearHorarioAsync(request, UsuarioAccion, IpActual);
             return StatusCode(201, new ApiItemResponse<HorarioResponse>(horario, 201));
+        }
+
+        [HttpGet("~/api/v1/admin/horarios")]
+        [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<HorarioResponse>>), 200)]
+        public async Task<IActionResult> ListarHorarios()
+        {
+            var horarios = await _service.ListarHorariosAsync();
+            return Ok(new ApiItemResponse<IReadOnlyList<HorarioResponse>>(horarios));
+        }
+
+        [HttpGet("~/api/v1/admin/horarios/{guid:guid}")]
+        [ProducesResponseType(typeof(ApiItemResponse<HorarioResponse>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ObtenerHorarioPorGuid(Guid guid)
+        {
+            var horario = await _service.ObtenerHorarioPorGuidAsync(guid);
+            return Ok(new ApiItemResponse<HorarioResponse>(horario));
+        }
+
+        [HttpGet("{ticketGuid:guid}/horarios")]
+        [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<HorarioResponse>>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ListarHorariosPorTicket(Guid ticketGuid)
+        {
+            var horarios = await _service.ListarHorariosPorTicketAsync(ticketGuid);
+            return Ok(new ApiItemResponse<IReadOnlyList<HorarioResponse>>(horarios));
+        }
+
+        [HttpGet("~/api/v1/admin/atracciones/{atraccionGuid:guid}/horarios")]
+        [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<HorarioResponse>>), 200)]
+        [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+        public async Task<IActionResult> ListarHorariosPorAtraccion(Guid atraccionGuid)
+        {
+            var horarios = await _service.ListarHorariosPorAtraccionAsync(atraccionGuid);
+            return Ok(new ApiItemResponse<IReadOnlyList<HorarioResponse>>(horarios));
         }
     }
 }

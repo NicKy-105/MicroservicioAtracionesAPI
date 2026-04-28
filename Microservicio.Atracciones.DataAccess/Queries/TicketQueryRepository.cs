@@ -32,7 +32,7 @@ namespace Microservicio.Atracciones.DataAccess.Queries
 
             return await _context.Horarios
                 .AsNoTracking()
-                .Include(x => x.Ticket)
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
                 .Where(x =>
                     x.Ticket.AtId == atId &&
                     x.Ticket.TckEstado == 'A' &&
@@ -56,7 +56,7 @@ namespace Microservicio.Atracciones.DataAccess.Queries
 
             var horariosActivos = await _context.Horarios
                 .AsNoTracking()
-                .Include(x => x.Ticket)
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
                 .Where(x =>
                     x.Ticket.AtId == atId &&
                     x.Ticket.TckEstado == 'A' &&
@@ -104,7 +104,7 @@ namespace Microservicio.Atracciones.DataAccess.Queries
 
             var horarios = await _context.Horarios
                 .AsNoTracking()
-                .Include(x => x.Ticket)
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
                 .Where(x =>
                     idsSet.Contains(x.Ticket.AtId) &&
                     x.Ticket.TckEstado == 'A' &&

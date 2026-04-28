@@ -9,6 +9,12 @@ namespace Microservicio.Atracciones.DataManagement.Models.Reservas
         public int HorId { get; set; }
         public Guid HorGuid { get; set; }
         public int TckId { get; set; }
+        public Guid TckGuid { get; set; }
+        public int AtId { get; set; }
+        public Guid AtGuid { get; set; }
+        public string AtNombre { get; set; } = string.Empty;
+        public string TckTitulo { get; set; } = string.Empty;
+        public int TckCapacidadMaxima { get; set; }
         public DateOnly HorFecha { get; set; }
         public TimeOnly HorHoraInicio { get; set; }
         public TimeOnly? HorHoraFin { get; set; }

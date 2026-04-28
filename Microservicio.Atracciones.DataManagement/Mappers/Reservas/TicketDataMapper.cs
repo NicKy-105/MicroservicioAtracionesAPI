@@ -14,6 +14,8 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
                 TckId = entity.TckId,
                 TckGuid = entity.TckGuid,
                 AtId = entity.AtId,
+                AtGuid = entity.Atraccion?.AtGuid ?? Guid.Empty,
+                AtNombre = entity.Atraccion?.AtNombre ?? string.Empty,
                 TckTitulo = entity.TckTitulo,
                 TckPrecio = entity.TckPrecio,
                 TckTipoParticipante = entity.TckTipoParticipante,
@@ -28,7 +30,13 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
                 TckIpMod = entity.TckIpMod,
                 TckFechaEliminacion = entity.TckFechaEliminacion,
                 TckUsuarioEliminacion = entity.TckUsuarioEliminacion,
-                TckIpEliminacion = entity.TckIpEliminacion
+                TckIpEliminacion = entity.TckIpEliminacion,
+                Horarios = entity.Horarios
+                    .Where(h => h.HorEstado == 'A')
+                    .OrderBy(h => h.HorFecha)
+                    .ThenBy(h => h.HorHoraInicio)
+                    .Select(h => ToHorarioDataModel(h)!)
+                    .ToList()
             };
         }
 
@@ -72,6 +80,12 @@ namespace Microservicio.Atracciones.DataManagement.Mappers.Reservas
                 HorId = entity.HorId,
                 HorGuid = entity.HorGuid,
                 TckId = entity.TckId,
+                TckGuid = entity.Ticket?.TckGuid ?? Guid.Empty,
+                AtId = entity.Ticket?.AtId ?? 0,
+                AtGuid = entity.Ticket?.Atraccion?.AtGuid ?? Guid.Empty,
+                AtNombre = entity.Ticket?.Atraccion?.AtNombre ?? string.Empty,
+                TckTitulo = entity.Ticket?.TckTitulo ?? string.Empty,
+                TckCapacidadMaxima = entity.Ticket?.TckCapacidadMaxima ?? 0,
                 HorFecha = entity.HorFecha,
                 HorHoraInicio = entity.HorHoraInicio,
                 HorHoraFin = entity.HorHoraFin,

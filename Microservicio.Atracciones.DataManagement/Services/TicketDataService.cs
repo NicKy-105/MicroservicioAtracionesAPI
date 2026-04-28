@@ -27,6 +27,12 @@ namespace Microservicio.Atracciones.DataManagement.Services
         public async Task<TicketDataModel?> ObtenerPorGuidAsync(Guid tckGuid)
             => TicketDataMapper.ToDataModel(await _uow.Tickets.ObtenerPorGuidAsync(tckGuid));
 
+        public async Task<IReadOnlyList<TicketDataModel>> ListarAsync()
+        {
+            var entities = await _uow.Tickets.ListarActivosAsync();
+            return entities.Select(e => TicketDataMapper.ToDataModel(e)!).ToList();
+        }
+
         public async Task<IReadOnlyList<TicketDataModel>> ListarPorAtraccionAsync(int atId)
         {
             var entities = await _uow.Tickets.ListarPorAtraccionAsync(atId);
@@ -71,6 +77,18 @@ namespace Microservicio.Atracciones.DataManagement.Services
 
         public async Task<HorarioDataModel?> ObtenerHorarioPorGuidAsync(Guid horGuid)
             => TicketDataMapper.ToHorarioDataModel(await _uow.Tickets.ObtenerHorarioPorGuidAsync(horGuid));
+
+        public async Task<IReadOnlyList<HorarioDataModel>> ListarHorariosAsync()
+        {
+            var entities = await _uow.Tickets.ListarHorariosActivosAsync();
+            return entities.Select(e => TicketDataMapper.ToHorarioDataModel(e)!).ToList();
+        }
+
+        public async Task<IReadOnlyList<HorarioDataModel>> ListarHorariosPorTicketAsync(int tckId)
+        {
+            var entities = await _uow.Tickets.ListarHorariosPorTicketAsync(tckId);
+            return entities.Select(e => TicketDataMapper.ToHorarioDataModel(e)!).ToList();
+        }
 
         public async Task<IReadOnlyList<HorarioDataModel>> ListarHorariosPorAtraccionAsync(int atId, int diasAdelante = 7)
         {

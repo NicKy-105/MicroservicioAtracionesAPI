@@ -9,6 +9,7 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
     {
         Task<TicketDataModel?> ObtenerPorIdAsync(int tckId);
         Task<TicketDataModel?> ObtenerPorGuidAsync(Guid tckGuid);
+        Task<IReadOnlyList<TicketDataModel>> ListarAsync();
         Task<IReadOnlyList<TicketDataModel>> ListarPorAtraccionAsync(int atId);
         Task CrearAsync(TicketDataModel model);
         Task ActualizarAsync(TicketDataModel model);
@@ -17,6 +18,8 @@ namespace Microservicio.Atracciones.DataManagement.Interfaces
 
         // Horarios
         Task<HorarioDataModel?> ObtenerHorarioPorGuidAsync(Guid horGuid);
+        Task<IReadOnlyList<HorarioDataModel>> ListarHorariosAsync();
+        Task<IReadOnlyList<HorarioDataModel>> ListarHorariosPorTicketAsync(int tckId);
         Task<IReadOnlyList<HorarioDataModel>> ListarHorariosPorAtraccionAsync(int atId, int diasAdelante = 7);
         Task CrearHorarioAsync(HorarioDataModel model);
         Task ActualizarHorarioAsync(HorarioDataModel model);

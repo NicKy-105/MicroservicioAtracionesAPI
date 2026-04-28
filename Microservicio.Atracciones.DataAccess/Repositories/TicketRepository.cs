@@ -19,16 +19,30 @@ namespace Microservicio.Atracciones.DataAccess.Repositories
         public async Task<TicketEntity?> ObtenerPorIdAsync(int tckId)
             => await _context.Tickets
                 .Include(x => x.Atraccion)
+                .Include(x => x.Horarios)
                 .FirstOrDefaultAsync(x => x.TckId == tckId && x.TckEstado == 'A');
 
         public async Task<TicketEntity?> ObtenerPorGuidAsync(Guid tckGuid)
             => await _context.Tickets
                 .Include(x => x.Atraccion)
+                .Include(x => x.Horarios)
                 .FirstOrDefaultAsync(x => x.TckGuid == tckGuid && x.TckEstado == 'A');
+
+        public async Task<IReadOnlyList<TicketEntity>> ListarActivosAsync()
+            => await _context.Tickets
+                .AsNoTracking()
+                .Include(x => x.Atraccion)
+                .Include(x => x.Horarios)
+                .Where(x => x.TckEstado == 'A')
+                .OrderBy(x => x.Atraccion.AtNombre)
+                .ThenBy(x => x.TckTitulo)
+                .ToListAsync();
 
         public async Task<IReadOnlyList<TicketEntity>> ListarPorAtraccionAsync(int atId)
             => await _context.Tickets
                 .AsNoTracking()
+                .Include(x => x.Atraccion)
+                .Include(x => x.Horarios)
                 .Where(x => x.AtId == atId && x.TckEstado == 'A')
                 .ToListAsync();
 
@@ -39,10 +53,32 @@ namespace Microservicio.Atracciones.DataAccess.Repositories
             => _context.Tickets.Update(ticket);
 
         public async Task<HorarioEntity?> ObtenerHorarioPorIdAsync(int horId)
-            => await _context.Horarios.FirstOrDefaultAsync(x => x.HorId == horId && x.HorEstado == 'A');
+            => await _context.Horarios
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
+                .FirstOrDefaultAsync(x => x.HorId == horId && x.HorEstado == 'A');
 
         public async Task<HorarioEntity?> ObtenerHorarioPorGuidAsync(Guid horGuid)
-            => await _context.Horarios.FirstOrDefaultAsync(x => x.HorGuid == horGuid && x.HorEstado == 'A');
+            => await _context.Horarios
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
+                .FirstOrDefaultAsync(x => x.HorGuid == horGuid && x.HorEstado == 'A');
+
+        public async Task<IReadOnlyList<HorarioEntity>> ListarHorariosActivosAsync()
+            => await _context.Horarios
+                .AsNoTracking()
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
+                .Where(x => x.HorEstado == 'A')
+                .OrderBy(x => x.HorFecha)
+                .ThenBy(x => x.HorHoraInicio)
+                .ToListAsync();
+
+        public async Task<IReadOnlyList<HorarioEntity>> ListarHorariosPorTicketAsync(int tckId)
+            => await _context.Horarios
+                .AsNoTracking()
+                .Include(x => x.Ticket).ThenInclude(t => t.Atraccion)
+                .Where(x => x.TckId == tckId && x.HorEstado == 'A')
+                .OrderBy(x => x.HorFecha)
+                .ThenBy(x => x.HorHoraInicio)
+                .ToListAsync();
 
         public async Task AgregarHorarioAsync(HorarioEntity horario)
             => await _context.Horarios.AddAsync(horario);

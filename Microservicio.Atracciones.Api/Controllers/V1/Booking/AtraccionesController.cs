@@ -86,4 +86,22 @@ public class AtraccionesController : ControllerBase
         var response = AtraccionesApiMapper.ToDetalleResponse(detalle);
         return Ok(response);
     }
+
+    [HttpGet("{guid:guid}/tickets")]
+    [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<TicketDisponibleResponse>>), 200)]
+    [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+    public async Task<IActionResult> ListarTickets(Guid guid)
+    {
+        var tickets = await _service.ListarTicketsAsync(guid);
+        return Ok(new ApiItemResponse<IReadOnlyList<TicketDisponibleResponse>>(tickets));
+    }
+
+    [HttpGet("{guid:guid}/horarios-disponibles")]
+    [ProducesResponseType(typeof(ApiItemResponse<IReadOnlyList<HorarioProximoResponse>>), 200)]
+    [ProducesResponseType(typeof(ApiErrorResponse), 404)]
+    public async Task<IActionResult> ListarHorariosDisponibles(Guid guid)
+    {
+        var horarios = await _service.ListarHorariosDisponiblesAsync(guid);
+        return Ok(new ApiItemResponse<IReadOnlyList<HorarioProximoResponse>>(horarios));
+    }
 }

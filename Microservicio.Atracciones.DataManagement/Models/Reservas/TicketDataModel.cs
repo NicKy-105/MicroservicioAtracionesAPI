@@ -9,6 +9,8 @@ namespace Microservicio.Atracciones.DataManagement.Models.Reservas
         public int TckId { get; set; }
         public Guid TckGuid { get; set; }
         public int AtId { get; set; }
+        public Guid AtGuid { get; set; }
+        public string AtNombre { get; set; } = string.Empty;
         public string TckTitulo { get; set; } = string.Empty;
         public decimal TckPrecio { get; set; }
         public string TckTipoParticipante { get; set; } = string.Empty;
@@ -26,5 +28,7 @@ namespace Microservicio.Atracciones.DataManagement.Models.Reservas
         public DateTime? TckFechaEliminacion { get; set; }
         public string? TckUsuarioEliminacion { get; set; }
         public string? TckIpEliminacion { get; set; }
+
+        public IReadOnlyList<HorarioDataModel> Horarios { get; set; } = new List<HorarioDataModel>();
     }
 }

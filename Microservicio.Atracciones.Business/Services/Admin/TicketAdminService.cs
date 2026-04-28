@@ -22,6 +22,27 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             _rules = rules;
         }
 
+        public async Task<IReadOnlyList<TicketResponse>> ListarTicketsAsync()
+            => (await _ticketService.ListarAsync()).Select(t => TicketAdminMapper.ToResponse(t, string.Empty)).ToList();
+
+        public async Task<TicketResponse> ObtenerTicketPorGuidAsync(Guid tckGuid)
+        {
+            var ticket = await _ticketService.ObtenerPorGuidAsync(tckGuid)
+                ?? throw new NotFoundException("Ticket", tckGuid);
+
+            return TicketAdminMapper.ToResponse(ticket, string.Empty);
+        }
+
+        public async Task<IReadOnlyList<TicketResponse>> ListarTicketsPorAtraccionAsync(Guid atGuid)
+        {
+            var atraccion = await _atraccionService.ObtenerPorGuidAsync(atGuid)
+                ?? throw new NotFoundException("Atraccion", atGuid);
+
+            return (await _ticketService.ListarPorAtraccionAsync(atraccion.AtId))
+                .Select(t => TicketAdminMapper.ToResponse(t, atraccion.AtNombre))
+                .ToList();
+        }
+
         public async Task<TicketResponse> CrearTicketAsync(CrearTicketRequest request, string usuarioAccion, string ip)
         {
             TicketAdminValidator.ValidarCrear(request);
@@ -73,6 +94,38 @@ namespace Microservicio.Atracciones.Business.Services.Admin
             await _ticketService.EliminarLogicoAsync(model.TckId, usuarioAccion, ip);
         }
 
+        public async Task<IReadOnlyList<HorarioResponse>> ListarHorariosAsync()
+            => (await _ticketService.ListarHorariosAsync()).Select(TicketAdminMapper.ToHorarioResponse).ToList();
+
+        public async Task<HorarioResponse> ObtenerHorarioPorGuidAsync(Guid horGuid)
+        {
+            var horario = await _ticketService.ObtenerHorarioPorGuidAsync(horGuid)
+                ?? throw new NotFoundException("Horario", horGuid);
+
+            return TicketAdminMapper.ToHorarioResponse(horario);
+        }
+
+        public async Task<IReadOnlyList<HorarioResponse>> ListarHorariosPorTicketAsync(Guid tckGuid)
+        {
+            var ticket = await _ticketService.ObtenerPorGuidAsync(tckGuid)
+                ?? throw new NotFoundException("Ticket", tckGuid);
+
+            return (await _ticketService.ListarHorariosPorTicketAsync(ticket.TckId))
+                .Select(TicketAdminMapper.ToHorarioResponse)
+                .ToList();
+        }
+
+        public async Task<IReadOnlyList<HorarioResponse>> ListarHorariosPorAtraccionAsync(Guid atGuid)
+        {
+            var atraccion = await _atraccionService.ObtenerPorGuidAsync(atGuid)
+                ?? throw new NotFoundException("Atraccion", atGuid);
+
+            return (await _ticketService.ListarHorariosAsync())
+                .Where(h => h.AtId == atraccion.AtId)
+                .Select(TicketAdminMapper.ToHorarioResponse)
+                .ToList();
+        }
+
         public async Task<HorarioResponse> CrearHorarioAsync(CrearHorarioRequest request, string usuarioAccion, string ip)
         {
             TicketAdminValidator.ValidarCrearHorario(request);
@@ -94,16 +147,8 @@ namespace Microservicio.Atracciones.Business.Services.Admin
 
             await _ticketService.CrearHorarioAsync(horario);
             
-            return new HorarioResponse
-            {
-                HorGuid = horario.HorGuid.ToString(),
-                TckGuid = ticket.TckGuid.ToString(),
-                Fecha = horario.HorFecha.ToString("yyyy-MM-dd"),
-                HoraInicio = horario.HorHoraInicio.ToString(@"hh\:mm"),
-                HoraFin = horario.HorHoraFin?.ToString(@"hh\:mm"),
-                CuposDisponibles = horario.HorCuposDisponibles,
-                Estado = horario.HorEstado
-            };
+            var creado = await _ticketService.ObtenerHorarioPorGuidAsync(horario.HorGuid) ?? horario;
+            return TicketAdminMapper.ToHorarioResponse(creado);
         }
     }
 }
