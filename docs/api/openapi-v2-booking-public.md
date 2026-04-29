@@ -6,9 +6,16 @@ Este documento formaliza el contrato de integración pública para Booking sobre
 
 - `GET /api/v1/atracciones`
 - `GET /api/v1/atracciones/{guid}`
+- `GET /api/v1/atracciones/{guid}/tickets`
+- `GET /api/v1/atracciones/{guid}/horarios-disponibles`
 - `GET /api/v1/atracciones/filtros`
+- `GET /api/v1/reservas` (Mis Reservas)
 - `POST /api/v1/reservas`
 - `GET /api/v1/reservas/{guid}`
+- `PUT /api/v1/reservas/{guid}/cancelar`
+- `POST /api/v1/reservas/{guid}/confirmar-pago`
+- `GET /api/v1/facturas/mis-facturas`
+- `GET /api/v1/tickets/{guid}/horarios`
 
 Incluye reglas funcionales, códigos HTTP, estructura de errores y contrato OpenAPI 3.0.3 actualizado con reservas.
 
@@ -158,6 +165,58 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
+  /atracciones/{guid}/tickets:
+    get:
+      operationId: listarTicketsAtraccion
+      tags: [Atracciones]
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listado de tickets para la atracción
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/TicketDisponible" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /atracciones/{guid}/horarios-disponibles:
+    get:
+      operationId: listarHorariosDisponiblesAtraccion
+      tags: [Atracciones]
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listado de horarios con cupos para la atracción
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/HorarioProximo" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
   /atracciones/filtros:
     get:
       operationId: obtenerFiltros
@@ -173,6 +232,33 @@ paths:
         "500": { $ref: "#/components/responses/InternalError" }
 
   /reservas:
+    get:
+      operationId: listarMisReservas
+      tags: [Reservas]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200":
+          description: Listado de reservas del cliente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/Reserva" }
+                  pagination: { $ref: "#/components/schemas/Paginacion" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
     post:
       operationId: crearReserva
       tags: [Reservas]
@@ -209,6 +295,101 @@ paths:
         "200": { $ref: "#/components/responses/ReservaOK" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /reservas/{guid}/confirmar-pago:
+    post:
+      operationId: confirmarPagoReserva
+      tags: [Reservas]
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ConfirmarPagoReservaRequest"
+      responses:
+        "201": { $ref: "#/components/responses/FacturaItemOK" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /reservas/{guid}/cancelar:
+    put:
+      operationId: cancelarReserva
+      tags: [Reservas]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CancelarReservaRequest"
+      responses:
+        "204": { description: Sin contenido }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/Conflict" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /facturas/mis-facturas:
+    get:
+      operationId: listarMisFacturas
+      tags: [Facturas]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: limit
+          schema: { type: integer, default: 10 }
+      responses:
+        "200": { $ref: "#/components/responses/FacturaOK" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/InternalError" }
+
+  /tickets/{guid}/horarios:
+    get:
+      operationId: listarHorariosPorTicket
+      tags: [Atracciones]
+      parameters:
+        - in: path
+          name: guid
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listado de horarios para el ticket
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: integer, example: 200 }
+                  data:
+                    type: array
+                    items: { $ref: "#/components/schemas/HorarioProximo" }
         "404": { $ref: "#/components/responses/NotFound" }
         "500": { $ref: "#/components/responses/InternalError" }
 
@@ -428,6 +609,35 @@ components:
             type: string
             nullable: true
 
+    ConfirmarPagoReservaRequest:
+      type: object
+      required: [nombre_receptor, correo_receptor]
+      properties:
+        nombre_receptor: { type: string, maxLength: 100 }
+        apellido_receptor: { type: string, maxLength: 100, nullable: true }
+        correo_receptor: { type: string, format: email, maxLength: 150 }
+        telefono_receptor: { type: string, maxLength: 20, nullable: true }
+        observacion: { type: string, maxLength: 500, nullable: true }
+
+    CancelarReservaRequest:
+      type: object
+      required: [motivo]
+      properties:
+        motivo: { type: string }
+
+    Factura:
+      type: object
+      properties:
+        fac_guid: { type: string, format: uuid }
+        fac_numero: { type: string }
+        rev_codigo: { type: string }
+        total: { type: number, format: double }
+        moneda: { type: string, default: USD }
+        fecha_emision: { type: string, format: date-time }
+        estado: { type: string, maxLength: 1 }
+        nombre_receptor: { type: string }
+        correo_receptor: { type: string }
+
     Paginacion:
       type: object
       properties:
@@ -532,6 +742,30 @@ components:
               message: { type: string, example: Operación exitosa }
               data: { $ref: "#/components/schemas/Reserva" }
 
+    FacturaOK:
+      description: Listado de facturas obtenido exitosamente
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status: { type: integer, example: 200 }
+              data:
+                type: array
+                items: { $ref: "#/components/schemas/Factura" }
+              pagination: { $ref: "#/components/schemas/Paginacion" }
+
+    FacturaItemOK:
+      description: Factura generada exitosamente
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status: { type: integer, example: 201 }
+              message: { type: string }
+              data: { $ref: "#/components/schemas/Factura" }
+
     BadRequest:
       description: Error de validación de parámetros o payload
       content:
@@ -610,13 +844,20 @@ Convenciones globales (salvo lo indicado):
 | `GET /api/v1/atracciones` | `200` + `ApiListResponse` | `400`, `500` |
 | `GET /api/v1/atracciones/filtros` | `200` + `ApiItemResponse` | `400`, `500` |
 | `GET /api/v1/atracciones/{guid}` | `200` + `ApiItemResponse` | `404`, `500` |
-| `POST /api/v1/reservas` | `201` + `ApiItemResponse` (`status` 201 en envelope) | `400`, `401`, `404` (horario/ticket inexistente), `409` (cupos / ticket inactivo), `500` |
+| `GET /api/v1/atracciones/{guid}/tickets` | `200` | `404`, `500` |
+| `GET /api/v1/atracciones/{guid}/horarios-disponibles` | `200` | `404`, `500` |
+| `GET /api/v1/tickets/{guid}/horarios` | `200` | `404`, `500` |
+| `POST /api/v1/reservas` | `201` + `ApiItemResponse` (`status` 201 en envelope) | `400`, `401`, `404`, `409`, `500` |
+| `GET /api/v1/reservas` | `200` + `ApiListResponse` | `401`, `500` |
 | `GET /api/v1/reservas/{guid}` | `200` + `ApiItemResponse` | `401`, `403`, `404`, `500` |
+| `PUT /api/v1/reservas/{guid}/cancelar` | `204` | `401`, `403`, `404`, `409`, `500` |
+| `POST /api/v1/reservas/{guid}/confirmar-pago` | `201` + `ApiItemResponse` | `400`, `404`, `409`, `500` |
+| `GET /api/v1/facturas/mis-facturas` | `200` + `ApiListResponse` | `401`, `403`, `500` |
 | `GET /api/v1/resenias` | `200` + `ApiItemResponse` | `404`, `500` |
 | `POST /api/v1/resenias` | `201` + `ApiItemResponse` (`status` 201) | `400`, `401`, `403`, `404`, `409`, `500` |
-| `GET /api/v1/admin/reservas` | `200` + `ApiListResponse` | `400` (paginación), `401`, `403`, `500` |
+| `GET /api/v1/admin/reservas` | `200` + `ApiListResponse` | `400`, `401`, `403`, `500` |
 | `GET /api/v1/admin/reservas/{guid}` | `200` + `ApiItemResponse` | `404`, `401`, `403`, `500` |
 | `PUT /api/v1/admin/reservas/{guid}/estado` | `204` | `400`, `404`, `409`, `401`, `403`, `500` |
-| `GET/POST` facturas, tickets, clientes (admin) | `200` / `201` | Ver atributos en controladores: `400`, `404`, `409` donde el servicio lo amerite; `201` con envelope `status: 201` |
-| `GET/POST/PUT/DELETE` atracciones, destinos, reseñas admin, usuarios | según acción | `400`, `404` en mutaciones; `204` en deletes; `401`, `403`, `500` a nivel de controlador con JWT |
+| `GET/POST` facturas, tickets, clientes (admin) | `200` / `201` | `400`, `404`, `409`, `201` |
+| `GET/POST/PUT/DELETE` atracciones, destinos, reseñas admin, usuarios | según acción | `400`, `404`, `204`, `401`, `403`, `500` |
 | `POST /api/v1/admin/auth/login` | `200` | Sin cambios respecto a la configuración existente del controlador |
