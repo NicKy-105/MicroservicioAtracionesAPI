@@ -224,8 +224,9 @@ paths:
       parameters:
         - in: query
           name: ciudad
-          required: true
+          required: false
           schema: { type: string }
+          description: Filtra los contadores por ciudad. Si se omite, retorna filtros globales.
       responses:
         "200": { $ref: "#/components/responses/FiltrosOK" }
         "400": { $ref: "#/components/responses/BadRequest" }
@@ -262,8 +263,10 @@ paths:
     post:
       operationId: crearReserva
       tags: [Reservas]
-      security:
-        - bearerAuth: []
+      description: |
+        Crea una reserva. Acepta peticiones anónimas y autenticadas.
+        - **Con JWT** (`ClienteAutenticado`): el `cli_id` se extrae del token; no se requiere `cliente_invitado`.
+        - **Sin JWT** (invitado): se debe incluir el objeto `cliente_invitado` en el body.
       requestBody:
         required: true
         content:
@@ -273,7 +276,6 @@ paths:
       responses:
         "201": { $ref: "#/components/responses/ReservaCreada" }
         "400": { $ref: "#/components/responses/BadRequest" }
-        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
         "409": { $ref: "#/components/responses/Conflict" }
         "500": { $ref: "#/components/responses/InternalError" }
@@ -554,10 +556,28 @@ components:
           type: array
           items: { $ref: "#/components/schemas/OpcionFiltro" }
 
+    ClienteInvitadoRequest:
+      type: object
+      description: Datos del cliente no registrado. Obligatorio cuando la petición no lleva JWT.
+      required: [tipo_identificacion, numero_identificacion, correo]
+      properties:
+        tipo_identificacion: { type: string, maxLength: 20 }
+        numero_identificacion: { type: string, maxLength: 20 }
+        nombres: { type: string, maxLength: 100, nullable: true }
+        apellidos: { type: string, maxLength: 100, nullable: true }
+        razon_social: { type: string, maxLength: 200, nullable: true }
+        correo: { type: string, format: email, maxLength: 150 }
+        telefono: { type: string, maxLength: 20, nullable: true }
+        direccion: { type: string, maxLength: 300, nullable: true }
+
     CrearReservaRequest:
       type: object
-      required: [hor_guid, lineas]
+      required: [at_guid, hor_guid, lineas]
       properties:
+        at_guid:
+          type: string
+          format: uuid
+          description: GUID de la atracción. Debe coincidir con la atracción del horario seleccionado.
         hor_guid: { type: string, format: uuid }
         lineas:
           type: array
@@ -567,6 +587,11 @@ components:
         origen_canal:
           type: string
           nullable: true
+        cliente_invitado:
+          description: Requerido si la petición no lleva JWT. Ignorado si el token está presente.
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/ClienteInvitadoRequest"
 
     ReservaLineaRequest:
       type: object
@@ -861,3 +886,5 @@ Convenciones globales (salvo lo indicado):
 | `GET/POST` facturas, tickets, clientes (admin) | `200` / `201` | `400`, `404`, `409`, `201` |
 | `GET/POST/PUT/DELETE` atracciones, destinos, reseñas admin, usuarios | según acción | `400`, `404`, `204`, `401`, `403`, `500` |
 | `POST /api/v1/admin/auth/login` | `200` | Sin cambios respecto a la configuración existente del controlador |
+
+---
